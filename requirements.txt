@@ -1,0 +1,12 @@
+# Core functionality
+openai                    # Optional: only if using OpenAI models
+pyyaml                   # For YAML config file parsing
+loguru                   # Advanced logging
+python-dotenv            # Load environment variables from .env
+requests                 # For API calls and potential web integrations
+
+# Wake word detection
+pvporcupine              # Picovoice Porcupine wake word engine
+
+# CLI and terminal improvements
+colorama                 # Cross-platform terminal color support
