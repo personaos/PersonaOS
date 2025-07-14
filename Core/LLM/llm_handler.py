@@ -71,5 +71,22 @@ def init_llm_manager(config):
 
 
 def handle_conversation(prompt, config, memory, llm_manager):
-    # Optionally: add memory recall, pre/post-processing, intent handling, etc.
-    return llm_manager.query(prompt)
+    from ..intent.intent_processor import IntentProcessor
+    
+    # Initialize intent processor
+    intent_processor = IntentProcessor(config)
+    
+    # Process user input through intent system
+    intent_response = intent_processor.process(prompt)
+    
+    # Handle different actions
+    if intent_response["action"] in ["blocked", "refused", "tool_executed", "tool_failed"]:
+        return intent_response["response"]
+    
+    elif intent_response["action"] == "llm_response":
+        # Pass to LLM for safe response generation
+        return llm_manager.query(prompt)
+    
+    else:
+        # Fallback to direct LLM query
+        return llm_manager.query(prompt)

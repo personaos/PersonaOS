@@ -27,6 +27,12 @@ def load_config():
 
         # Memory (placeholder for future memory modules)
         "memory_enabled": os.getenv("MEMORY_ENABLED", "true").lower() == "true",
+        
+        # Intent processing settings
+        "intent_enabled": os.getenv("INTENT_ENABLED", "true").lower() == "true",
+        "safety_level": os.getenv("SAFETY_LEVEL", "standard"),  # strict, standard, relaxed
+        "allow_tool_execution": os.getenv("ALLOW_TOOL_EXECUTION", "true").lower() == "true",
+        "max_intent_confidence": float(os.getenv("MAX_INTENT_CONFIDENCE", "1.0")),
     }
 
     return config

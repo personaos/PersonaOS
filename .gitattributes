@@ -1,0 +1,11 @@
+# Set LF as the line ending for all text files
+* text eol=lf
+
+# Explicitly define common file types
+*.py text
+*.md text
+*.yml text
+*.yaml text
+*.json text
+*.env text
+*.sh text
