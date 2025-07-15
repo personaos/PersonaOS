@@ -3,10 +3,13 @@
 import argparse
 from dotenv import load_dotenv
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from core.config import load_config
-from core.memory_manager import MemoryManager
-from core.setup_env import is_env_complete, run_env_setup, reset_env
-from core.llm_handler import init_llm_manager, handle_conversation  # UPDATED IMPORTS
+from setup_env import is_env_complete, run_env_setup, reset_env
+from core.llm.llm_handler import init_llm_manager, handle_conversation
 
 def main():
     # CLI flag parsing
@@ -27,7 +30,7 @@ def main():
 
     # Load config and memory
     config = load_config()
-    memory = MemoryManager()
+    memory = None  # Memory manager will be implemented later
 
     # NEW: Initialize LLM manager
     llm_manager = init_llm_manager(config)
