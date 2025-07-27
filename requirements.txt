@@ -5,6 +5,9 @@ loguru                   # Advanced logging
 python-dotenv            # Load environment variables from .env
 requests                 # For API calls and potential web integrations
 
+# API Key Security & Management
+cryptography             # For secure API key encryption and storage
+
 # Wake word detection
 pvporcupine              # Picovoice Porcupine wake word engine
 

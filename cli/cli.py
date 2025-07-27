@@ -1,8 +1,11 @@
 import argparse
 import sys
-from llm_handler import LLMHandler
-from config_manager import ConfigManager
-from memory import Memory
+import os
+import json
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+from core.llm.llm_handler import LLMManager
+from core.config import load_config, validate_config
 
 def main():
     parser = argparse.ArgumentParser(description="PersonaOS Command Line Interface")
@@ -48,8 +51,8 @@ def main():
 
     args = parser.parse_args()
 
-    # Load or initialize config
-    config = ConfigManager.load_config()
+    # Load config
+    config = load_config()
 
     # Override LLM if specified
     if args.llm:
@@ -58,34 +61,32 @@ def main():
     # Handle config commands
     if args.config:
         print("Current PersonaOS Config:")
-        for key, value in config.items():
-            print(f"{key}: {value}")
+        # Sort keys for better readability
+        for key in sorted(config.keys()):
+            value = config[key]
+            # Mask sensitive values
+            if 'api_key' in key.lower() and value:
+                value = f"{value[:4]}***{value[-4:]}" if len(value) > 8 else "***"
+            print(f"  {key}: {value}")
         sys.exit(0)
 
     if args.set_config:
         key, value = args.set_config
-        # Basic type inference for common types, extend as needed
-        if value.lower() in ['true', 'false']:
-            value = value.lower() == 'true'
-        elif value.isdigit():
-            value = int(value)
-        config[key] = value
-        ConfigManager.save_config(config)
-        print(f"Config key '{key}' set to '{value}'")
-        sys.exit(0)
+        print(f"⚠️  Direct config modification not implemented yet.")
+        print(f"Use 'python setup_env.py' to modify configuration")
+        sys.exit(1)
 
     if args.reset_config:
-        ConfigManager.reset_config()
-        print("Config reset to default values.")
-        sys.exit(0)
+        print(f"⚠️  Config reset not implemented yet.")
+        print(f"Delete .env file and run 'python setup_env.py' to reset")
+        sys.exit(1)
 
-    # Initialize memory if enabled
-    conversation_memory = None
-    if not args.no_memory:
-        conversation_memory = Memory()
-
-    # Initialize LLM handler
-    llm = LLMHandler(config=config, memory=conversation_memory)
+    # Initialize LLM manager
+    try:
+        llm = LLMManager(config=config)
+    except Exception as e:
+        print(f"❌ Failed to initialize LLM manager: {e}")
+        sys.exit(1)
 
     if args.query:
         # Send single text query to LLM and print response

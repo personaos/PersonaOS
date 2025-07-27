@@ -17,6 +17,7 @@ PersonaOS is a modular AI personality operating system designed for embodied age
 
 **LLM Integration** (`core/llm/`):
 - `llm_handler.py` - Main LLM manager with OllamaHandler class
+- `prompt_engine.py` - Prompt generation, routing, and evaluation for external LLM collaboration
 - Supports both CLI and API modes for Ollama
 - Uses `LLMManager` to abstract different LLM providers
 
@@ -29,6 +30,7 @@ PersonaOS is a modular AI personality operating system designed for embodied age
 - `core/wakeword/` - Wake word detection (Porcupine)
 - `core/sst/`, `core/tts/` - Speech-to-text and text-to-speech (placeholders)
 - `core/audio.py` - Audio processing utilities
+- `core/tools/` - Plugin-based tools and utilities (clock, etc.)
 - Designed for easy extensibility with additional modules
 
 ## Development Commands
@@ -73,6 +75,7 @@ The system uses a `.env` file for configuration. Key variables:
 ### LLM Handler Architecture
 The LLM system uses a manager pattern with `LLMManager` that initializes specific handlers based on configuration. Currently supports:
 - `OllamaHandler` - Handles both CLI (`ollama chat`) and API calls
+- `PromptEngine` - Generates structured prompts for external LLM collaboration and self-improvement
 
 ### Memory System
 Memory management is stubbed out in the current implementation via `MemoryManager` class, designed for future conversation context storage.
@@ -85,6 +88,13 @@ The system includes proper error handling for:
 
 ### Module Loading
 Uses dynamic imports in `core/llm_handler.py` to support multiple LLM backends without tight coupling.
+
+### Plugin System
+PersonaOS supports a plugin-based architecture for extensible functionality:
+- `core/tools/` - Contains plugin modules (clock, etc.)
+- Plugins use factory functions (`create_tool()`) for dynamic loading
+- Tools include intent tags in docstrings for safety validation
+- PromptEngine supports generating prompts for plugin development
 
 ## Important Notes
 
