@@ -1,0 +1,2147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PersonaOS - AI Assistant Interface</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* CSS Custom Properties from PersonaOS Complete Design System */
+        :root {
+            /* Primary Blue Spectrum */
+            --blue-50: #eff6ff;
+            --blue-100: #dbeafe;
+            --blue-200: #bfdbfe;
+            --blue-300: #93c5fd;
+            --blue-400: #60a5fa;
+            --blue-500: #3b82f6;
+            --blue-600: #2563eb;
+            --blue-700: #1d4ed8;
+            --blue-800: #1e40af;
+            --blue-900: #1e3a8a;
+
+            /* Secondary Purple Spectrum */
+            --purple-50: #faf5ff;
+            --purple-100: #f3e8ff;
+            --purple-200: #e9d5ff;
+            --purple-300: #d8b4fe;
+            --purple-400: #c084fc;
+            --purple-500: #a855f7;
+            --purple-600: #9333ea;
+            --purple-700: #7c3aed;
+            --purple-800: #6b21a8;
+            --purple-900: #581c87;
+
+            /* Dark Mode Color System */
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #151520;
+            --bg-tertiary: #1f1f2e;
+            --bg-elevated: #252540;
+            --bg-hover: #2a2a42;
+            --bg-active: #303050;
+
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
+            --text-muted: #64748b;
+            --text-disabled: #475569;
+
+            --border-primary: #334155;
+            --border-secondary: #475569;
+            --border-focus: var(--blue-500);
+            --border-hover: #64748b;
+
+            --primary: var(--blue-500);
+            --primary-hover: var(--blue-600);
+            --primary-active: var(--blue-700);
+            --secondary: var(--purple-500);
+            --secondary-hover: var(--purple-600);
+            --secondary-active: var(--purple-700);
+
+            --success: #10b981;
+            --success-bg: #064e3b;
+            --warning: #f59e0b;
+            --warning-bg: #78350f;
+            --error: #ef4444;
+            --error-bg: #7f1d1d;
+            --info: var(--blue-500);
+            --info-bg: #1e3a8a;
+
+            /* Typography */
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+
+            --font-light: 300;
+            --font-regular: 400;
+            --font-medium: 500;
+            --font-semibold: 600;
+            --font-bold: 700;
+            --font-extrabold: 800;
+
+            --text-xs: 0.75rem;
+            --text-sm: 0.875rem;
+            --text-base: 1rem;
+            --text-lg: 1.125rem;
+            --text-xl: 1.25rem;
+            --text-2xl: 1.5rem;
+            --text-3xl: 1.875rem;
+            --text-4xl: 2.25rem;
+            --text-5xl: 3rem;
+            --text-6xl: 3.75rem;
+
+            --leading-none: 1;
+            --leading-tight: 1.25;
+            --leading-snug: 1.375;
+            --leading-normal: 1.5;
+            --leading-relaxed: 1.625;
+            --leading-loose: 2;
+
+            /* Spacing */
+            --space-0: 0;
+            --space-1: 0.25rem;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-5: 1.25rem;
+            --space-6: 1.5rem;
+            --space-7: 1.75rem;
+            --space-8: 2rem;
+            --space-10: 2.5rem;
+            --space-12: 3rem;
+            --space-16: 4rem;
+            --space-20: 5rem;
+            --space-24: 6rem;
+            --space-32: 8rem;
+        }
+
+        /* Light Mode Overrides */
+        [data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --bg-elevated: #ffffff;
+            --bg-hover: #f1f5f9;
+            --bg-active: #e2e8f0;
+
+            --text-primary: #0f172a;
+            --text-secondary: #334155;
+            --text-tertiary: #64748b;
+            --text-muted: #94a3b8;
+            --text-disabled: #cbd5e1;
+
+            --border-primary: #e2e8f0;
+            --border-secondary: #cbd5e1;
+            --border-hover: #94a3b8;
+
+            --success-bg: #dcfce7;
+            --warning-bg: #fef3c7;
+            --error-bg: #fee2e2;
+            --info-bg: #dbeafe;
+        }
+
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: var(--leading-normal);
+            transition: all 0.3s ease;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Layout Structure */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-primary);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-nav {
+            padding: var(--space-4) var(--space-6);
+            border-bottom: 1px solid var(--border-primary);
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: var(--space-2);
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: var(--space-3) var(--space-4);
+            background: transparent;
+            border: 1px solid var(--border-primary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: var(--text-sm);
+            font-weight: var(--font-medium);
+            border-radius: 0.5rem;
+        }
+
+        .nav-tab:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .sidebar-header {
+            padding: var(--space-6);
+            border-bottom: 1px solid var(--border-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: var(--text-xl);
+            font-weight: var(--font-bold);
+            color: var(--primary);
+        }
+
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
+            padding: var(--space-2) var(--space-3);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: var(--text-sm);
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-hover);
+        }
+
+        .conversation-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .conversation-header {
+            padding: var(--space-4) var(--space-6);
+            border-bottom: 1px solid var(--border-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .conversation-title {
+            font-size: var(--text-lg);
+            font-weight: var(--font-semibold);
+            color: var(--text-primary);
+        }
+
+        .new-conversation-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: var(--space-2) var(--space-4);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: var(--text-sm);
+            font-weight: var(--font-medium);
+            transition: all 0.2s ease;
+        }
+
+        .new-conversation-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .conversation-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--space-2);
+        }
+
+        .conversation-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-3) var(--space-4);
+            margin-bottom: var(--space-1);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .conversation-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .conversation-item.active {
+            background: var(--bg-tertiary);
+            border-color: var(--primary);
+        }
+
+        .conversation-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .conversation-name {
+            font-size: var(--text-sm);
+            font-weight: var(--font-medium);
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: var(--space-1);
+        }
+
+        .conversation-preview {
+            font-size: var(--text-xs);
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .conversation-actions {
+            display: flex;
+            gap: var(--space-1);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .conversation-item:hover .conversation-actions {
+            opacity: 1;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: var(--space-1);
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: var(--text-xs);
+        }
+
+        .action-btn:hover {
+            background: var(--bg-active);
+            color: var(--text-primary);
+        }
+
+        .action-btn.delete:hover {
+            color: var(--error);
+        }
+
+        /* Main Chat Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+        }
+
+        .chat-header {
+            padding: var(--space-4) var(--space-6);
+            border-bottom: 1px solid var(--border-primary);
+            background: var(--bg-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .llm-selector {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .llm-label {
+            font-size: var(--text-sm);
+            font-weight: var(--font-medium);
+            color: var(--text-secondary);
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-trigger {
+            min-width: 200px;
+            padding: var(--space-3) var(--space-4);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+            font-size: var(--text-sm);
+        }
+
+        .dropdown-trigger:hover {
+            border-color: var(--border-hover);
+        }
+
+        .dropdown-content {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-primary);
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            margin-top: var(--space-1);
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-8px);
+            transition: all 0.2s ease;
+        }
+
+        .dropdown.open .dropdown-content {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            padding: var(--space-3) var(--space-4);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border-bottom: 1px solid var(--border-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .dropdown-item.selected {
+            background: var(--primary);
+            color: white;
+        }
+
+        .model-status {
+            font-size: var(--text-xs);
+            padding: var(--space-1) var(--space-2);
+            border-radius: 0.25rem;
+            font-weight: var(--font-medium);
+        }
+
+        .status-available {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+
+        .status-loading {
+            background: var(--warning-bg);
+            color: var(--warning);
+        }
+
+        .status-unavailable {
+            background: var(--error-bg);
+            color: var(--error);
+        }
+
+        .chat-status {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-size: var(--text-sm);
+            color: var(--text-muted);
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Chat Messages Area */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--space-6);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-4);
+        }
+
+        .message {
+            max-width: 70%;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-2);
+        }
+
+        .message.user {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .message.assistant {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-size: var(--text-xs);
+            color: var(--text-muted);
+        }
+
+        .message-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--text-xs);
+            font-weight: var(--font-semibold);
+        }
+
+        .avatar-user {
+            background: var(--primary);
+            color: white;
+        }
+
+        .avatar-assistant {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .message-bubble {
+            padding: var(--space-4);
+            border-radius: 1rem;
+            font-size: var(--text-base);
+            line-height: var(--leading-relaxed);
+            transition: all 0.2s ease;
+        }
+
+        .message.user .message-bubble {
+            background: var(--primary);
+            color: white;
+            border-bottom-right-radius: 0.25rem;
+        }
+
+        .message.assistant .message-bubble {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-primary);
+            border-bottom-left-radius: 0.25rem;
+        }
+
+        .message-time {
+            font-size: var(--text-xs);
+            color: var(--text-muted);
+        }
+
+        /* Chat Input Area */
+        .chat-input-area {
+            padding: var(--space-6);
+            border-top: 1px solid var(--border-primary);
+            background: var(--bg-secondary);
+        }
+
+        .chat-input-container {
+            position: relative;
+            display: flex;
+            gap: var(--space-3);
+            align-items: flex-end;
+        }
+
+        .chat-input {
+            flex: 1;
+            min-height: 60px;
+            max-height: 120px;
+            padding: var(--space-4);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: 1rem;
+            color: var(--text-primary);
+            font-size: var(--text-base);
+            line-height: var(--leading-normal);
+            resize: none;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            background: var(--bg-primary);
+        }
+
+        .chat-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .send-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: var(--space-4);
+            border-radius: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 60px;
+            height: 60px;
+        }
+
+        .send-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .send-btn:disabled {
+            background: var(--text-disabled);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Empty State */
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: var(--space-16);
+        }
+
+        .empty-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--bg-secondary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: var(--space-6);
+            font-size: var(--text-3xl);
+            color: var(--text-muted);
+        }
+
+        .empty-title {
+            font-size: var(--text-2xl);
+            font-weight: var(--font-semibold);
+            color: var(--text-primary);
+            margin-bottom: var(--space-3);
+        }
+
+        .empty-subtitle {
+            font-size: var(--text-base);
+            color: var(--text-secondary);
+            max-width: 400px;
+            line-height: var(--leading-relaxed);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -320px;
+                top: 0;
+                height: 100vh;
+                z-index: 200;
+            }
+
+            .sidebar.open {
+                left: 0;
+            }
+
+            .main-content {
+                width: 100%;
+            }
+
+            .message {
+                max-width: 85%;
+            }
+
+            .chat-header {
+                padding: var(--space-3) var(--space-4);
+            }
+
+            .chat-messages {
+                padding: var(--space-4);
+            }
+
+            .chat-input-area {
+                padding: var(--space-4);
+            }
+        }
+
+        /* Loading Animation */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-4);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: 1rem;
+            border-bottom-left-radius: 0.25rem;
+            max-width: 80px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.5;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        /* Scrollbar Styling */
+        .conversation-list::-webkit-scrollbar,
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .conversation-list::-webkit-scrollbar-track,
+        .chat-messages::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        .conversation-list::-webkit-scrollbar-thumb,
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: var(--border-primary);
+            border-radius: 3px;
+        }
+
+        .conversation-list::-webkit-scrollbar-thumb:hover,
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: var(--border-hover);
+        }
+
+        /* Focus Management */
+        .focus-visible {
+            outline: 2px solid var(--border-focus);
+            outline-offset: 2px;
+            border-radius: 0.25rem;
+        }
+
+        :focus:not(.focus-visible) {
+            outline: none;
+        }
+
+        /* Settings Page Styles */
+        .settings-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--space-6);
+        }
+
+        .settings-section {
+            margin-bottom: var(--space-12);
+        }
+
+        .settings-section-title {
+            font-size: var(--text-2xl);
+            font-weight: var(--font-semibold);
+            color: var(--text-primary);
+            margin-bottom: var(--space-6);
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .settings-section-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: var(--text-lg);
+        }
+
+        .settings-grid {
+            display: grid;
+            gap: var(--space-6);
+        }
+
+        .setting-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: 0.75rem;
+            padding: var(--space-6);
+            transition: all 0.2s ease;
+        }
+
+        .setting-item:hover {
+            border-color: var(--border-hover);
+        }
+
+        .setting-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--space-3);
+        }
+
+        .setting-info {
+            flex: 1;
+        }
+
+        .setting-title {
+            font-size: var(--text-lg);
+            font-weight: var(--font-semibold);
+            color: var(--text-primary);
+            margin-bottom: var(--space-1);
+        }
+
+        .setting-description {
+            font-size: var(--text-sm);
+            color: var(--text-secondary);
+            line-height: var(--leading-relaxed);
+        }
+
+        .setting-control {
+            min-width: 200px;
+        }
+
+        .input {
+            width: 100%;
+            padding: var(--space-3) var(--space-4);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            font-size: var(--text-base);
+            transition: all 0.2s ease;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            background: var(--bg-primary);
+        }
+
+        .input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .select {
+            width: 100%;
+            padding: var(--space-3) var(--space-4);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            font-size: var(--text-base);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .select:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .toggle {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .toggle input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            width: 48px;
+            height: 24px;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-primary);
+            border-radius: 12px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-slider::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .toggle input:checked + .toggle-slider {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .toggle input:checked + .toggle-slider::after {
+            transform: translateX(24px);
+            background: white;
+        }
+
+        .range-slider {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            outline: none;
+            margin: var(--space-2) 0;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .range-slider::-webkit-slider-thumb:hover {
+            background: var(--primary-hover);
+            transform: scale(1.1);
+        }
+
+        .range-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .range-value {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: var(--text-sm);
+            color: var(--text-muted);
+            margin-top: var(--space-1);
+        }
+
+        .settings-actions {
+            display: flex;
+            gap: var(--space-4);
+            padding: var(--space-6);
+            border-top: 1px solid var(--border-primary);
+            background: var(--bg-secondary);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+            padding: var(--space-3) var(--space-6);
+            border-radius: 0.5rem;
+            font-size: var(--text-base);
+            font-weight: var(--font-medium);
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .api-key-input {
+            position: relative;
+        }
+
+        .api-key-toggle {
+            position: absolute;
+            right: var(--space-3);
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: var(--space-1);
+            border-radius: 0.25rem;
+            transition: all 0.2s ease;
+        }
+
+        .api-key-toggle:hover {
+            color: var(--text-primary);
+            background: var(--bg-hover);
+        }
+
+        .setting-warning {
+            background: var(--warning-bg);
+            border: 1px solid var(--warning);
+            border-radius: 0.5rem;
+            padding: var(--space-3);
+            margin-top: var(--space-3);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-size: var(--text-sm);
+            color: var(--warning);
+        }
+
+        .setting-info-box {
+            background: var(--info-bg);
+            border: 1px solid var(--info);
+            border-radius: 0.5rem;
+            padding: var(--space-3);
+            margin-top: var(--space-3);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-size: var(--text-sm);
+            color: var(--info);
+        }
+
+        /* Hidden by default */
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        /* Motion Preferences */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <!-- Sidebar Header -->
+            <div class="sidebar-header">
+                <div class="logo">PersonaOS</div>
+                <button class="theme-toggle" onclick="toggleTheme()">🌙/☀️</button>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="sidebar-nav">
+                <div class="nav-tabs">
+                    <button class="nav-tab active" onclick="switchTab('chat')">Chat</button>
+                    <button class="nav-tab" onclick="switchTab('settings')">Settings</button>
+                </div>
+            </div>
+
+            <!-- Chat Content (Conversation Section) -->
+            <div class="conversation-section content-section active" id="chatContent">
+                <div class="conversation-header">
+                    <div class="conversation-title">Conversations</div>
+                    <button class="new-conversation-btn" onclick="createNewConversation()">+ New</button>
+                </div>
+
+                <div class="conversation-list" id="conversationList">
+                    <!-- Conversation items will be populated by JavaScript -->
+                    <div class="conversation-item active" data-id="1">
+                        <div class="conversation-info">
+                            <div class="conversation-name">Welcome Chat</div>
+                            <div class="conversation-preview">Getting started with PersonaOS...</div>
+                        </div>
+                        <div class="conversation-actions">
+                            <button class="action-btn" onclick="renameConversation(1)" title="Rename">✏️</button>
+                            <button class="action-btn delete" onclick="deleteConversation(1)" title="Delete">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="conversation-item" data-id="2">
+                        <div class="conversation-info">
+                            <div class="conversation-name">Code Review Session</div>
+                            <div class="conversation-preview">Help me review this Python function...</div>
+                        </div>
+                        <div class="conversation-actions">
+                            <button class="action-btn" onclick="renameConversation(2)" title="Rename">✏️</button>
+                            <button class="action-btn delete" onclick="deleteConversation(2)" title="Delete">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="conversation-item" data-id="3">
+                        <div class="conversation-info">
+                            <div class="conversation-name">Project Planning</div>
+                            <div class="conversation-preview">Let's plan the PersonaOS roadmap...</div>
+                        </div>
+                        <div class="conversation-actions">
+                            <button class="action-btn" onclick="renameConversation(3)" title="Rename">✏️</button>
+                            <button class="action-btn delete" onclick="deleteConversation(3)" title="Delete">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Content -->
+            <div class="content-section" id="settingsContent">
+                <div class="settings-content">
+                    <!-- LLM Configuration Section -->
+                    <div class="settings-section">
+                        <div class="settings-section-title">
+                            <div class="settings-section-icon">🤖</div>
+                            <span>LLM Configuration</span>
+                        </div>
+                        <div class="settings-grid">
+                            <div class="setting-item">
+                                <div class="setting-header">
+                                    <div class="setting-info">
+                                        <div class="setting-title">Default LLM Provider</div>
+                                        <div class="setting-description">Choose your preferred AI model provider for conversations</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <select class="select" id="defaultProvider">
+                                            <option value="ollama">Ollama (Local)</option>
+                                            <option value="openai">OpenAI</option>
+                                            <option value="anthropic">Anthropic</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-item">
+                                <div class="setting-header">
+                                    <div class="setting-info">
+                                        <div class="setting-title">Ollama Model</div>
+                                        <div class="setting-description">Select the local Ollama model to use</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <select class="select" id="ollamaModel">
+                                            <option value="llama3.1">Llama 3.1</option>
+                                            <option value="mistral">Mistral 7B</option>
+                                            <option value="codellama">CodeLlama</option>
+                                            <option value="phi3">Phi-3</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-item">
+                                <div class="setting-header">
+                                    <div class="setting-info">
+                                        <div class="setting-title">OpenAI API Key</div>
+                                        <div class="setting-description">Your OpenAI API key for GPT models</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <div class="api-key-input">
+                                            <input type="password" class="input" id="openaiKey" placeholder="sk-...">
+                                            <button class="api-key-toggle" onclick="togglePasswordVisibility('openaiKey')">👁️</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="setting-warning">
+                                    ⚠️ API keys are stored locally and never sent to PersonaOS servers
+                                </div>
+                            </div>
+
+                            <div class="setting-item">
+                                <div class="setting-header">
+                                    <div class="setting-info">
+                                        <div class="setting-title">Anthropic API Key</div>
+                                        <div class="setting-description">Your Anthropic API key for Claude models</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <div class="api-key-input">
+                                            <input type="password" class="input" id="anthropicKey" placeholder="sk-ant-...">
+                                            <button class="api-key-toggle" onclick="togglePasswordVisibility('anthropicKey')">👁️</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-item">
+                                <div class="setting-header">
+                                    <div class="setting-info">
+                                        <div class="setting-title">Temperature</div>
+                                        <div class="setting-description">Controls randomness in AI responses (0.0 = focused, 1.0 = creative)</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <input type="range" class="range-slider" id="temperature" min="0" max="1" step="0.1" value="0.7">
+                                        <div class="range-value">
+                                            <span>0.0</span>
+                                            <span id="temperatureValue">0.7</span>
+                                            <span>1.0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-item">
+                                <div class="setting-header">
+                                    <div class="setting-info">
+                                        <div class="setting-title">Max Tokens</div>
+                                        <div class="setting-description">Maximum length of AI responses</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <input type="number" class="input" id="maxTokens" value="2048" min="100" max="8192">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interface Settings Section -->
+                    <div class="settings-section">
+                        <div class="settings-section-title">
+                            <div class="settings-section-icon">🎨</div>
+                            <span>Interface</span>
+                        </div>
+                        <div class="settings-grid">
+                            <div class="setting-item">
+                                <div class="setting-header">
+                                    <div class="setting-info">
+                                        <div class="setting-title">Theme Preference</div>
+                                        <div class="setting-description">Choose your preferred color scheme</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <select class="select" id="themePreference">
+                                            <option value="system">System Default</option>
+                                            <option value="dark">Dark Mode</option>
+                                            <option value="light">Light Mode</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-item">
+                                <div class="setting-header">
+                                    <div class="setting-info">
+                                        <div class="setting-title">Font Size</div>
+                                        <div class="setting-description">Adjust the text size for better readability</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <select class="select" id="fontSize">
+                                            <option value="small">Small</option>
+                                            <option value="medium" selected>Medium</option>
+                                            <option value="large">Large</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-item">
+                                <div class="setting-header">
+                                    <div class="setting-info">
+                                        <div class="setting-title">Show Typing Indicators</div>
+                                        <div class="setting-description">Display when the AI is typing a response</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle">
+                                            <input type="checkbox" id="showTyping" checked>
+                                            <div class="toggle-slider"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-item">
+                                <div class="setting-header">
+                                    <div class="setting-info">
+                                        <div class="setting-title">Auto-scroll to New Messages</div>
+                                        <div class="setting-description">Automatically scroll to the latest message</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle">
+                                            <input type="checkbox" id="autoScroll" checked>
+                                            <div class="toggle-slider"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-item">
+                                <div class="setting-header">
+                                    <div class="setting-info">
+                                        <div class="setting-title">Send Message Shortcut</div>
+                                        <div class="setting-description">Keyboard shortcut to send messages</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <select class="select" id="sendShortcut">
+                                            <option value="enter">Enter</option>
+                                            <option value="ctrl-enter">Ctrl + Enter</option>
+                                            <option value="shift-enter">Shift + Enter</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Audio Settings Section -->
+                    <div class="settings-section">
+                        <div class="settings-section-title">
+                            <div class="settings-section-icon">🔊</div>
+                            <span>Audio & Voice</span>
+                        </div>
+                        <div class="settings-grid">
+                            <div class="setting-item">
+                                <div class="setting-header">
+                                    <div class="setting-info">
+                                        <div class="setting-title">Wake Word Detection</div>
+                                        <div class="setting-description">Enable voice activation with "Hey PersonaOS"</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle">
+                                            <input type="checkbox" id="wakeWord">
+                                            <div class="toggle-slider"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="setting-info-box">
+                                    ℹ️ Requires Picovoice API key for wake word detection
+                                </div>
+                            </div>
+
+                            <div class="setting-item">
+                                <div class="setting-header">
+                                    <div class="setting-info">
+                                        <div class="setting-title">Picovoice API Key</div>
+                                        <div class="setting-description">API key for wake word detection service</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <div class="api-key-input">
+                                            <input type="password" class="input" id="picovoiceKey" placeholder="Enter API key">
+                                            <button class="api-key-toggle" onclick="togglePasswordVisibility('picovoiceKey')">👁️</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-item">
+                                <div class="setting-header">
+                                    <div class="setting-info">
+                                        <div class="setting-title">Text-to-Speech</div>
+                                        <div class="setting-description">Enable AI voice responses</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle">
+                                            <input type="checkbox" id="ttsEnabled">
+                                            <div class="toggle-slider"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-item">
+                                <div class="setting-header">
+                                    <div class="setting-info">
+                                        <div class="setting-title">Voice Volume</div>
+                                        <div class="setting-description">Adjust the AI voice response volume</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <input type="range" class="range-slider" id="voiceVolume" min="0" max="100" step="5" value="75">
+                                        <div class="range-value">
+                                            <span>0%</span>
+                                            <span id="volumeValue">75%</span>
+                                            <span>100%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Privacy & Security Section -->
+                    <div class="settings-section">
+                        <div class="settings-section-title">
+                            <div class="settings-section-icon">🔒</div>
+                            <span>Privacy & Security</span>
+                        </div>
+                        <div class="settings-grid">
+                            <div class="setting-item">
+                                <div class="setting-header">
+                                    <div class="setting-info">
+                                        <div class="setting-title">Local Processing</div>
+                                        <div class="setting-description">Keep all data processing on your device</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle">
+                                            <input type="checkbox" id="localProcessing" checked disabled>
+                                            <div class="toggle-slider"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="setting-info-box">
+                                    ℹ️ PersonaOS is designed for local-first operation by default
+                                </div>
+                            </div>
+
+                            <div class="setting-item">
+                                <div class="setting-header">
+                                    <div class="setting-info">
+                                        <div class="setting-title">Save Conversation History</div>
+                                        <div class="setting-description">Store conversations locally for future reference</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle">
+                                            <input type="checkbox" id="saveHistory" checked>
+                                            <div class="toggle-slider"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-item">
+                                <div class="setting-header">
+                                    <div class="setting-info">
+                                        <div class="setting-title">Auto-delete Old Conversations</div>
+                                        <div class="setting-description">Automatically remove conversations older than specified time</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <select class="select" id="autoDelete">
+                                            <option value="never">Never</option>
+                                            <option value="30">30 days</option>
+                                            <option value="90">90 days</option>
+                                            <option value="365">1 year</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-item">
+                                <div class="setting-header">
+                                    <div class="setting-info">
+                                        <div class="setting-title">Debug Mode</div>
+                                        <div class="setting-description">Enable detailed logging for troubleshooting</div>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle">
+                                            <input type="checkbox" id="debugMode">
+                                            <div class="toggle-slider"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Actions -->
+                <div class="settings-actions">
+                    <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
+                    <button class="btn btn-secondary" onclick="resetSettings()">Reset to Defaults</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <div class="llm-selector">
+                    <div class="llm-label">Model:</div>
+                    <div class="dropdown" id="llmDropdown">
+                        <div class="dropdown-trigger" onclick="toggleDropdown('llmDropdown')">
+                            <span id="selectedModel">Ollama - Llama 3.1</span>
+                            <span>▼</span>
+                        </div>
+                        <div class="dropdown-content">
+                            <div class="dropdown-item selected" onclick="selectModel(this, 'Ollama - Llama 3.1')">
+                                <span>Ollama - Llama 3.1</span>
+                                <span class="model-status status-available">Available</span>
+                            </div>
+                            <div class="dropdown-item" onclick="selectModel(this, 'Ollama - Mistral 7B')">
+                                <span>Ollama - Mistral 7B</span>
+                                <span class="model-status status-available">Available</span>
+                            </div>
+                            <div class="dropdown-item" onclick="selectModel(this, 'Ollama - CodeLlama')">
+                                <span>Ollama - CodeLlama</span>
+                                <span class="model-status status-loading">Loading</span>
+                            </div>
+                            <div class="dropdown-item" onclick="selectModel(this, 'OpenAI GPT-4')">
+                                <span>OpenAI GPT-4</span>
+                                <span class="model-status status-unavailable">API Key Required</span>
+                            </div>
+                            <div class="dropdown-item" onclick="selectModel(this, 'Anthropic Claude')">
+                                <span>Anthropic Claude</span>
+                                <span class="model-status status-unavailable">API Key Required</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-status">
+                    <div class="status-indicator"></div>
+                    <span>Connected</span>
+                </div>
+            </div>
+
+            <!-- Chat Messages -->
+            <div class="chat-messages" id="chatMessages">
+                <!-- Welcome message -->
+                <div class="message assistant">
+                    <div class="message-header">
+                        <div class="message-avatar avatar-assistant">AI</div>
+                        <span>PersonaOS Assistant</span>
+                        <span class="message-time">Just now</span>
+                    </div>
+                    <div class="message-bubble">
+                        Welcome to PersonaOS! I'm your local AI assistant. I'm running entirely on your machine, ensuring your privacy and data security. How can I help you today?
+                    </div>
+                </div>
+
+                <!-- Example conversation -->
+                <div class="message user">
+                    <div class="message-header">
+                        <span class="message-time">2 minutes ago</span>
+                        <span>You</span>
+                        <div class="message-avatar avatar-user">U</div>
+                    </div>
+                    <div class="message-bubble">
+                        Can you help me understand how PersonaOS works and what makes it different from other AI assistants?
+                    </div>
+                </div>
+
+                <div class="message assistant">
+                    <div class="message-header">
+                        <div class="message-avatar avatar-assistant">AI</div>
+                        <span>PersonaOS Assistant</span>
+                        <span class="message-time">2 minutes ago</span>
+                    </div>
+                    <div class="message-bubble">
+                        PersonaOS is designed with privacy and local processing at its core. Here are the key differences:
+
+                        <br><br><strong>🔒 Privacy-First:</strong> All processing happens on your device - no data leaves your machine
+                        <br><strong>🏠 Local-First:</strong> Works offline and doesn't require internet connectivity
+                        <br><strong>🎯 Modular:</strong> Plugin-based architecture for extensibility
+                        <br><strong>🤖 Multi-Model:</strong> Support for various local LLMs via Ollama
+                        <br><strong>🎨 Modern UI:</strong> Clean, accessible interface built with our design system
+
+                        <br><br>You have full control over your data and conversations. Everything stays on your machine!
+                    </div>
+                </div>
+
+                <!-- Typing indicator (hidden by default) -->
+                <div class="message assistant" id="typingIndicator" style="display: none;">
+                    <div class="message-header">
+                        <div class="message-avatar avatar-assistant">AI</div>
+                        <span>PersonaOS Assistant</span>
+                        <span class="message-time">typing...</span>
+                    </div>
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Input Area -->
+            <div class="chat-input-area">
+                <div class="chat-input-container">
+                    <textarea 
+                        class="chat-input" 
+                        id="chatInput" 
+                        placeholder="Type your message here... (Shift+Enter for new line, Enter to send)"
+                        rows="1"></textarea>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m22 2-7 20-4-9-9-4z"/>
+                            <path d="M22 2 11 13"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme Management
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        // Dropdown functionality
+        function toggleDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            dropdown.classList.toggle('open');
+        }
+
+        function selectModel(item, modelName) {
+            const dropdown = document.getElementById('llmDropdown');
+            const selectedSpan = document.getElementById('selectedModel');
+            
+            // Remove selected class from all items
+            dropdown.querySelectorAll('.dropdown-item').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked item
+            item.classList.add('selected');
+            
+            // Update displayed model name
+            selectedSpan.textContent = modelName;
+            
+            // Close dropdown
+            dropdown.classList.remove('open');
+            
+            console.log('Model changed to:', modelName);
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const dropdowns = document.querySelectorAll('.dropdown');
+            dropdowns.forEach(dropdown => {
+                if (!dropdown.contains(e.target)) {
+                    dropdown.classList.remove('open');
+                }
+            });
+        });
+
+        // Conversation Management
+        let conversationCounter = 4;
+
+        function createNewConversation() {
+            const conversationList = document.getElementById('conversationList');
+            
+            // Deactivate current conversation
+            conversationList.querySelectorAll('.conversation-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Create new conversation item
+            const newItem = document.createElement('div');
+            newItem.className = 'conversation-item active';
+            newItem.setAttribute('data-id', conversationCounter);
+            newItem.innerHTML = `
+                <div class="conversation-info">
+                    <div class="conversation-name">New Conversation ${conversationCounter}</div>
+                    <div class="conversation-preview">Start a new conversation...</div>
+                </div>
+                <div class="conversation-actions">
+                    <button class="action-btn" onclick="renameConversation(${conversationCounter})" title="Rename">✏️</button>
+                    <button class="action-btn delete" onclick="deleteConversation(${conversationCounter})" title="Delete">🗑️</button>
+                </div>
+            `;
+            
+            // Add click handler
+            newItem.addEventListener('click', function() {
+                selectConversation(conversationCounter);
+            });
+            
+            conversationList.insertBefore(newItem, conversationList.firstChild);
+            conversationCounter++;
+            
+            // Clear chat messages
+            clearChatMessages();
+            
+            console.log('New conversation created');
+        }
+
+        function selectConversation(id) {
+            // Update active conversation
+            document.querySelectorAll('.conversation-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            document.querySelector(`[data-id="${id}"]`).classList.add('active');
+            
+            // Load conversation messages (placeholder)
+            loadConversationMessages(id);
+            
+            console.log('Selected conversation:', id);
+        }
+
+        function renameConversation(id) {
+            const item = document.querySelector(`[data-id="${id}"]`);
+            const nameElement = item.querySelector('.conversation-name');
+            const currentName = nameElement.textContent;
+            
+            const newName = prompt('Enter new conversation name:', currentName);
+            if (newName && newName.trim()) {
+                nameElement.textContent = newName.trim();
+                console.log('Conversation renamed to:', newName);
+            }
+        }
+
+        function deleteConversation(id) {
+            if (confirm('Are you sure you want to delete this conversation?')) {
+                const item = document.querySelector(`[data-id="${id}"]`);
+                const wasActive = item.classList.contains('active');
+                
+                item.remove();
+                
+                // If deleted conversation was active, select the first remaining one
+                if (wasActive) {
+                    const firstConversation = document.querySelector('.conversation-item');
+                    if (firstConversation) {
+                        firstConversation.classList.add('active');
+                        const firstId = firstConversation.getAttribute('data-id');
+                        loadConversationMessages(firstId);
+                    } else {
+                        clearChatMessages();
+                    }
+                }
+                
+                console.log('Conversation deleted:', id);
+            }
+        }
+
+        function loadConversationMessages(id) {
+            // Placeholder function to load conversation messages
+            // In a real implementation, this would fetch messages from storage
+            console.log('Loading messages for conversation:', id);
+        }
+
+        function clearChatMessages() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">💬</div>
+                    <div class="empty-title">Start a new conversation</div>
+                    <div class="empty-subtitle">Ask me anything! I'm here to help with coding, questions, creative tasks, and more.</div>
+                </div>
+            `;
+        }
+
+        // Chat Input Handling
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+
+        // Auto-resize textarea
+        chatInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            
+            // Enable/disable send button
+            sendBtn.disabled = !this.value.trim();
+        });
+
+        // Handle Enter key
+        chatInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            addMessage('user', message);
+            
+            // Clear input
+            input.value = '';
+            input.style.height = 'auto';
+            sendBtn.disabled = true;
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            // Simulate AI response (replace with actual API call)
+            setTimeout(() => {
+                hideTypingIndicator();
+                const responses = [
+                    "I'd be happy to help! Could you provide more details about what you're looking for?",
+                    "That's an interesting question. Let me think about the best approach for this.",
+                    "Based on what you've shared, here are a few suggestions...",
+                    "I understand what you're asking. This is a common scenario, and here's how I'd approach it:",
+                    "Great question! This touches on some important concepts. Let me explain..."
+                ];
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                addMessage('assistant', randomResponse);
+            }, 1500 + Math.random() * 2000);
+        }
+
+        function addMessage(sender, text) {
+            const chatMessages = document.getElementById('chatMessages');
+            
+            // Remove empty state if present
+            const emptyState = chatMessages.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            if (sender === 'user') {
+                messageDiv.innerHTML = `
+                    <div class="message-header">
+                        <span class="message-time">${timeString}</span>
+                        <span>You</span>
+                        <div class="message-avatar avatar-user">U</div>
+                    </div>
+                    <div class="message-bubble">${text}</div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="message-header">
+                        <div class="message-avatar avatar-assistant">AI</div>
+                        <span>PersonaOS Assistant</span>
+                        <span class="message-time">${timeString}</span>
+                    </div>
+                    <div class="message-bubble">${text}</div>
+                `;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            typingIndicator.style.display = 'flex';
+            
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            typingIndicator.style.display = 'none';
+        }
+
+        // Add click handlers to existing conversation items
+        document.querySelectorAll('.conversation-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                selectConversation(id);
+            });
+        });
+
+        // Mobile sidebar toggle (for responsive design)
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+        }
+
+        // Tab switching functionality
+        function switchTab(tabName) {
+            // Update nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            
+            // Update content sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            if (tabName === 'chat') {
+                document.getElementById('chatContent').classList.add('active');
+            } else if (tabName === 'settings') {
+                document.getElementById('settingsContent').classList.add('active');
+            }
+            
+            console.log('Switched to tab:', tabName);
+        }
+
+        // Settings functionality
+        function togglePasswordVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            const button = input.nextElementSibling;
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                button.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                button.textContent = '👁️';
+            }
+        }
+
+        function saveSettings() {
+            const settings = {
+                // LLM Configuration
+                defaultProvider: document.getElementById('defaultProvider').value,
+                ollamaModel: document.getElementById('ollamaModel').value,
+                openaiKey: document.getElementById('openaiKey').value,
+                anthropicKey: document.getElementById('anthropicKey').value,
+                temperature: parseFloat(document.getElementById('temperature').value),
+                maxTokens: parseInt(document.getElementById('maxTokens').value),
+                
+                // Interface
+                themePreference: document.getElementById('themePreference').value,
+                fontSize: document.getElementById('fontSize').value,
+                showTyping: document.getElementById('showTyping').checked,
+                autoScroll: document.getElementById('autoScroll').checked,
+                sendShortcut: document.getElementById('sendShortcut').value,
+                
+                // Audio & Voice
+                wakeWord: document.getElementById('wakeWord').checked,
+                picovoiceKey: document.getElementById('picovoiceKey').value,
+                ttsEnabled: document.getElementById('ttsEnabled').checked,
+                voiceVolume: parseInt(document.getElementById('voiceVolume').value),
+                
+                // Privacy & Security
+                localProcessing: document.getElementById('localProcessing').checked,
+                saveHistory: document.getElementById('saveHistory').checked,
+                autoDelete: document.getElementById('autoDelete').value,
+                debugMode: document.getElementById('debugMode').checked
+            };
+            
+            // Save to localStorage
+            localStorage.setItem('personaos-settings', JSON.stringify(settings));
+            
+            // Apply settings immediately
+            applySettings(settings);
+            
+            // Show feedback
+            showNotification('Settings saved successfully!', 'success');
+            
+            console.log('Settings saved:', settings);
+        }
+
+        function loadSettings() {
+            const defaultSettings = {
+                defaultProvider: 'ollama',
+                ollamaModel: 'llama3.1',
+                openaiKey: '',
+                anthropicKey: '',
+                temperature: 0.7,
+                maxTokens: 2048,
+                themePreference: 'dark',
+                fontSize: 'medium',
+                showTyping: true,
+                autoScroll: true,
+                sendShortcut: 'enter',
+                wakeWord: false,
+                picovoiceKey: '',
+                ttsEnabled: false,
+                voiceVolume: 75,
+                localProcessing: true,
+                saveHistory: true,
+                autoDelete: 'never',
+                debugMode: false
+            };
+            
+            const savedSettings = localStorage.getItem('personaos-settings');
+            const settings = savedSettings ? { ...defaultSettings, ...JSON.parse(savedSettings) } : defaultSettings;
+            
+            // Apply to form elements
+            document.getElementById('defaultProvider').value = settings.defaultProvider;
+            document.getElementById('ollamaModel').value = settings.ollamaModel;
+            document.getElementById('openaiKey').value = settings.openaiKey;
+            document.getElementById('anthropicKey').value = settings.anthropicKey;
+            document.getElementById('temperature').value = settings.temperature;
+            document.getElementById('maxTokens').value = settings.maxTokens;
+            document.getElementById('themePreference').value = settings.themePreference;
+            document.getElementById('fontSize').value = settings.fontSize;
+            document.getElementById('showTyping').checked = settings.showTyping;
+            document.getElementById('autoScroll').checked = settings.autoScroll;
+            document.getElementById('sendShortcut').value = settings.sendShortcut;
+            document.getElementById('wakeWord').checked = settings.wakeWord;
+            document.getElementById('picovoiceKey').value = settings.picovoiceKey;
+            document.getElementById('ttsEnabled').checked = settings.ttsEnabled;
+            document.getElementById('voiceVolume').value = settings.voiceVolume;
+            document.getElementById('localProcessing').checked = settings.localProcessing;
+            document.getElementById('saveHistory').checked = settings.saveHistory;
+            document.getElementById('autoDelete').value = settings.autoDelete;
+            document.getElementById('debugMode').checked = settings.debugMode;
+            
+            // Update range slider displays
+            document.getElementById('temperatureValue').textContent = settings.temperature;
+            document.getElementById('volumeValue').textContent = settings.voiceVolume + '%';
+            
+            // Apply settings
+            applySettings(settings);
+            
+            return settings;
+        }
+
+        function applySettings(settings) {
+            // Apply theme preference
+            if (settings.themePreference !== 'system') {
+                document.documentElement.setAttribute('data-theme', settings.themePreference);
+            }
+            
+            // Apply font size
+            document.body.className = document.body.className.replace(/font-size-\w+/g, '');
+            document.body.classList.add(`font-size-${settings.fontSize}`);
+            
+            console.log('Settings applied:', settings);
+        }
+
+        function resetSettings() {
+            if (confirm('Are you sure you want to reset all settings to their default values?')) {
+                localStorage.removeItem('personaos-settings');
+                loadSettings();
+                showNotification('Settings reset to defaults', 'info');
+                console.log('Settings reset to defaults');
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 24px;
+                background: var(--${type === 'success' ? 'success' : type === 'error' ? 'error' : 'info'});
+                color: white;
+                border-radius: 8px;
+                z-index: 1000;
+                font-size: 14px;
+                font-weight: 500;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                animation: slideInRight 0.3s ease;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // Range slider updates
+        document.addEventListener('input', function(e) {
+            if (e.target.id === 'temperature') {
+                document.getElementById('temperatureValue').textContent = e.target.value;
+            } else if (e.target.id === 'voiceVolume') {
+                document.getElementById('volumeValue').textContent = e.target.value + '%';
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load settings
+            loadSettings();
+            
+            // Focus chat input if on chat tab
+            if (document.getElementById('chatContent').classList.contains('active')) {
+                chatInput.focus();
+            }
+            
+            // Initialize send button state
+            sendBtn.disabled = true;
+            
+            console.log('PersonaOS Web UI initialized');
+        });
+    </script>
+</body>
+</html>
