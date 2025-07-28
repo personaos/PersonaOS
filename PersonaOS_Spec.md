@@ -27,7 +27,7 @@ A technical and strategic specification for the PersonaOS MVP (Minimum Viable Pr
 
 PersonaOS is a modular, privacy-focused AI personality operating system designed to run on local hardware with optional embodiment capabilities (e.g. voice interface, robotics, smart search tools).
 
-Version 0.1.0 is CLI-based and supports conversation with local LLMs via Ollama.
+Version 0.1.0 includes both CLI and web UI interfaces, supporting conversation with local LLMs via Ollama, with comprehensive intent processing, safety validation, and tool execution capabilities.
 
 ---
 
@@ -58,12 +58,16 @@ Version 0.1.0 is CLI-based and supports conversation with local LLMs via Ollama.
 | Env setup wizard        | `setup_env.py`                | ✅ Implemented  | Walks user through .env creation.                      |
 | Config loader           | `core/config.py`              | ✅ Implemented  | Loads and validates runtime settings.                  |
 | LLM Manager             | `core/llm/llm_handler.py`     | ✅ Implemented  | Connects to Ollama LLM backend (CLI and API modes).    |
-| Memory system           | `core/memory_manager.py`      | 🟡 Stubbed      | Prepped for future persistent memory handling.         |
+| Memory system           | `core/llm/memory.py`          | ✅ Implemented  | Conversation memory with encryption support.           |
+| Intent processing       | `core/intent/`                | ✅ Implemented  | Intent classification, safety validation, and processing.|
+| Tool system             | `core/tools/`                 | ✅ Implemented  | Plugin-based tool architecture with registry.         |
+| Web UI backend          | `persona_web_ui/backend/`     | ✅ Implemented  | FastAPI backend for web interface.                     |
+| Web UI frontend         | `persona_web_ui/frontend/`    | ✅ Implemented  | React frontend with Vite development server.          |
 | Audio utilities         | `core/audio.py`               | 🟡 Placeholder  | Audio I/O helpers (to be extended).                    |
-| Wake word detection     | `core/wakeword/`              | 🔲 Planned      | Intended for Porcupine or OVOS Precise.                |
-| Speech-to-text (STT)    | `core/stt/`                   | 🔲 Planned      | Placeholder for Whisper or DeepSpeech integration.     |
-| Text-to-speech (TTS)    | `core/tts/`                   | 🔲 Planned      | Will include Coqui, pyttsx3, Mimic3, etc.              |
-| CLI utilities           | `cli/cli.py`                  | ✅ Basic        | Enables queries, config setting, and debugging.        |
+| Wake word detection     | `core/wakeword/`              | 🟡 Partial      | Basic Porcupine wrapper implemented.                   |
+| Speech-to-text (STT)    | `core/sst/`                   | 🟡 Placeholder  | Placeholder directory for future STT integration.      |
+| Text-to-speech (TTS)    | `core/tts/`                   | 🟡 Placeholder  | Placeholder directory for future TTS integration.      |
+| CLI utilities           | `cli/cli.py`                  | ✅ Implemented  | Enables queries, config setting, and debugging.        |
 
 ---
 
@@ -162,25 +166,30 @@ DEBUG_MODE=True
 |-------------------------------|----------------|-------------------------------------------------|
 | Modular LLM system            | ✅ Implemented  | Uses `OllamaHandler` under the `LLMManager`.    |
 | CLI input/output              | ✅ Implemented  | Text-based interaction loop.                    |
+| Web UI interface              | ✅ Implemented  | FastAPI backend with React frontend.           |
 | Config wizard & validation    | ✅ Implemented  | User-friendly onboarding and setup.             |
-| Intent classification (early) | ✅ Basic        | Initial intent-routing logic via LLM.           |
-| Safety system (stub)          | 🟡 In Progress  | Future intent whitelisting/blacklisting.        |
-| Memory manager (stub)         | 🟡 Placeholder  | Hooks for future persistent memory.             |
-| STT/TTS placeholders          | 🔲 Planned      | Will include Whisper, Coqui, pyttsx3.           |
-| Wake word detection           | 🔲 Planned      | Will integrate Porcupine or OVOS Precise.       |
-| Tool execution engine         | 🔲 Planned      | LLM tools gated behind rule-based controller.   |
+| Intent processing system      | ✅ Implemented  | Complete intent classification and validation.  |
+| Safety validation system      | ✅ Implemented  | Configurable safety levels with validation.     |
+| Memory management             | ✅ Implemented  | Encrypted conversation storage and retrieval.   |
+| Tool execution engine         | ✅ Implemented  | Plugin-based tool system with safety gates.    |
+| API key management            | ✅ Implemented  | Encrypted storage and management of API keys.   |
+| Model management              | ✅ Implemented  | Web UI for loading/downloading/removing models. |
+| Wake word detection           | 🟡 Partial      | Basic Porcupine wrapper implemented.           |
+| STT/TTS integration           | 🟡 Placeholder  | Directory structure and placeholders ready.     |
 
 ---
 
 ## 10. Planned Features & Roadmap
 
-### 🧠 Phase 1: Local Voice Assistant (v0.2.x)
+### 🧠 Phase 1: Enhanced Voice & Integration (v0.2.x)
 - [ ] Integrate Whisper STT
 - [ ] Add Coqui / pyttsx3 TTS
 - [ ] Looping audio engine
-- [ ] Intent classification module (better routing)
-- [ ] Basic tool registry
-- [ ] Basic memory (file-based)
+- [x] Intent classification module ✅
+- [x] Tool registry and execution ✅
+- [x] Memory system with encryption ✅
+- [ ] Enhanced wake word detection
+- [ ] Voice-first web UI mode
 
 ### 🧩 Phase 2: Plugin Framework (v0.3.x)
 - [ ] Intent safety + policy engine
