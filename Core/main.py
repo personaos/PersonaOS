@@ -10,6 +10,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.config import load_config
 from setup_env import is_env_complete, run_env_setup, reset_env
 from core.llm.llm_handler import init_llm_manager, handle_conversation
+from core.llm.memory import MemoryManager
 
 def main():
     # CLI flag parsing
@@ -28,24 +29,35 @@ def main():
     # Load environment variables from .env
     load_dotenv()
 
-    # Load config and memory
+    # Load config and initialize memory
     config = load_config()
-    memory = None  # Memory manager will be implemented later
+    memory = MemoryManager(config) if config.get("memory_enabled", True) else None
 
     # NEW: Initialize LLM manager
     llm_manager = init_llm_manager(config)
 
+    # Initialize memory session
+    if memory:
+        session_id = memory.start_new_session()
+        print(f"🧠 Memory session started: {session_id}")
+
     # Start conversation loop
     print("🤖 PersonaOS is running... (type 'exit' to quit)")
-    while True:
-        user_input = input("You: ")
-        if user_input.lower() == "exit":
-            print("👋 Goodbye!")
-            break
+    try:
+        while True:
+            user_input = input("You: ")
+            if user_input.lower() == "exit":
+                print("👋 Goodbye!")
+                break
 
-        # UPDATED: Pass llm_manager explicitly
-        response = handle_conversation(user_input, config, memory, llm_manager)
-        print("PersonaOS:", response)
+            # UPDATED: Pass llm_manager explicitly
+            response = handle_conversation(user_input, config, memory, llm_manager)
+            print("PersonaOS:", response)
+    finally:
+        # Clean up memory session
+        if memory:
+            memory.clear_session()
+            print("💾 Conversation saved to memory")
 
 if __name__ == "__main__":
     main()

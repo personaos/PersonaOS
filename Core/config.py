@@ -71,6 +71,11 @@ def load_config():
         
         # Memory management
         "memory_enabled": os.getenv("MEMORY_ENABLED", "true").lower() == "true",
+        "memory_dir": os.getenv("MEMORY_DIR", "data/memory"),
+        "enable_persistent_memory": os.getenv("ENABLE_PERSISTENT_MEMORY", "true").lower() == "true",
+        "max_session_messages": int(os.getenv("MAX_SESSION_MESSAGES", "50")),
+        "max_context_length": int(os.getenv("MAX_CONTEXT_LENGTH", "4000")),
+        "memory_retention_days": int(os.getenv("MEMORY_RETENTION_DAYS", "30")),
         
         # Intent processing
         "intent_enabled": os.getenv("INTENT_ENABLED", "true").lower() == "true",
@@ -224,5 +229,15 @@ def validate_config(config: Dict) -> Dict[str, str]:
     # Check confidence range
     if not (0.0 <= config['max_intent_confidence'] <= 1.0):
         issues['max_intent_confidence'] = "Must be between 0.0 and 1.0"
+    
+    # Check memory settings
+    if config['max_session_messages'] < 1:
+        issues['max_session_messages'] = "Must be at least 1"
+    
+    if config['max_context_length'] < 100:
+        issues['max_context_length'] = "Must be at least 100"
+    
+    if config['memory_retention_days'] < 1:
+        issues['memory_retention_days'] = "Must be at least 1 day"
     
     return issues

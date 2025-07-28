@@ -73,6 +73,10 @@ def init_llm_manager(config):
 def handle_conversation(prompt, config, memory, llm_manager):
     from ..intent.intent_processor import IntentProcessor
     
+    # Add user message to memory
+    if memory:
+        memory.add_message("user", prompt)
+    
     # Initialize intent processor
     intent_processor = IntentProcessor(config)
     
@@ -81,12 +85,41 @@ def handle_conversation(prompt, config, memory, llm_manager):
     
     # Handle different actions
     if intent_response["action"] in ["blocked", "refused", "tool_executed", "tool_failed"]:
-        return intent_response["response"]
+        response = intent_response["response"]
+        
+        # Add system response to memory
+        if memory:
+            memory.add_message("system", response, {"intent_action": intent_response["action"]})
+        
+        return response
     
     elif intent_response["action"] == "llm_response":
-        # Pass to LLM for safe response generation
-        return llm_manager.query(prompt)
+        # Get conversation context for LLM
+        context_messages = []
+        if memory:
+            context_messages = memory.get_context_for_llm(config.get("max_context_length", 4000))
+        
+        # If we have context, use it; otherwise just query with the current prompt
+        if context_messages:
+            # For now, use the full context as a single prompt
+            # TODO: Implement proper conversation context handling in LLM
+            full_context = "\n".join([f"{msg['role']}: {msg['content']}" for msg in context_messages])
+            response = llm_manager.query(full_context)
+        else:
+            response = llm_manager.query(prompt)
+        
+        # Add assistant response to memory
+        if memory:
+            memory.add_message("assistant", response)
+        
+        return response
     
     else:
         # Fallback to direct LLM query
-        return llm_manager.query(prompt)
+        response = llm_manager.query(prompt)
+        
+        # Add assistant response to memory
+        if memory:
+            memory.add_message("assistant", response)
+        
+        return response

@@ -4,7 +4,19 @@
       "Bash(mkdir:*)",
       "Bash(python:*)",
       "Bash(pip install:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(npm install)",
+      "Bash(start \"\" index.html)",
+      "Bash(explorer:*)",
+      "Bash(npx eslint:*)",
+      "Bash(node:*)",
+      "Bash(grep:*)",
+      "Bash(copy App.jsx App_backup.jsx)",
+      "Bash(cp:*)",
+      "Bash(sed:*)",
+      "Bash(npm run build:*)",
+      "Bash(mv:*)"
     ],
     "deny": []
   }

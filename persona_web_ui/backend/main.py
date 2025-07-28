@@ -13,7 +13,10 @@ import json
 import logging
 import os
 import shutil
+import subprocess
+import asyncio
 from pathlib import Path
+from datetime import datetime
 from dotenv import load_dotenv, set_key, dotenv_values
 
 # Configure logging
@@ -27,9 +30,22 @@ app = FastAPI(
 )
 
 # CORS middleware to allow frontend communication
+# Load environment variables to get frontend port
+load_dotenv()
+frontend_port = os.getenv('FRONTEND_PORT', '5173')
+allowed_origins = [
+    "http://localhost:3000",  # Default React dev server
+    f"http://localhost:{frontend_port}",  # Configured frontend port
+    "http://localhost:5173",  # Default Vite port
+    "http://localhost:5174",  # Vite fallback port 1
+    "http://localhost:5175",  # Vite fallback port 2
+    "http://localhost:5176",  # Vite fallback port 3
+    "http://localhost:5177"   # Vite fallback port 4
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # React dev servers
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -59,6 +75,275 @@ class SetupDefaultsResponse(BaseModel):
     config_sections: Dict[str, Dict[str, Any]]
     current_values: Dict[str, str]
 
+# Model management Pydantic models
+class ModelInfo(BaseModel):
+    name: str
+    size: Optional[str] = None
+    modified: Optional[str] = None
+    digest: Optional[str] = None
+    family: Optional[str] = None
+    format: Optional[str] = None
+    status: str = "available"  # available, loading, error
+
+class LoadModelRequest(BaseModel):
+    model_name: str
+
+class ModelResponse(BaseModel):
+    success: bool
+    message: str
+    model: Optional[ModelInfo] = None
+
+class ModelsListResponse(BaseModel):
+    models: List[ModelInfo]
+    current_model: Optional[str] = None
+
+class SystemPromptRequest(BaseModel):
+    model_name: str
+    system_prompt: str
+
+class ModelSettingsRequest(BaseModel):
+    model_name: str
+    settings: Dict[str, Any]
+
+class SystemPromptResponse(BaseModel):
+    success: bool
+    message: str
+    system_prompt: Optional[str] = None
+
+class ModelSettingsResponse(BaseModel):
+    success: bool
+    message: str
+    settings: Optional[Dict[str, Any]] = None
+
+# Ollama Model Management
+class OllamaManager:
+    """Manages Ollama models - loading, listing, downloading, and configuration."""
+    
+    def __init__(self):
+        self.current_model = None
+        self.models_config_path = Path("../../models/config.json")
+        self.prompts_config_path = Path("../../models/prompts.json")
+        self._load_config()
+    
+    def _load_config(self):
+        """Load model configurations from JSON files."""
+        try:
+            if self.models_config_path.exists():
+                with open(self.models_config_path, 'r') as f:
+                    config = json.load(f)
+                    self.current_model = config.get("current_model")
+        except Exception as e:
+            logger.error(f"Failed to load model config: {e}")
+    
+    def _save_config(self, config_data: Dict[str, Any]):
+        """Save model configuration to JSON file."""
+        try:
+            self.models_config_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.models_config_path, 'w') as f:
+                json.dump(config_data, f, indent=2)
+        except Exception as e:
+            logger.error(f"Failed to save model config: {e}")
+            raise
+    
+    def _save_prompts(self, prompts_data: Dict[str, Any]):
+        """Save system prompts to JSON file."""
+        try:
+            self.prompts_config_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.prompts_config_path, 'w') as f:
+                json.dump(prompts_data, f, indent=2)
+        except Exception as e:
+            logger.error(f"Failed to save prompts config: {e}")
+            raise
+    
+    async def list_models(self) -> List[ModelInfo]:
+        """List all available Ollama models."""
+        try:
+            result = subprocess.run(
+                ["ollama", "list"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            models = []
+            lines = result.stdout.strip().split('\n')
+            
+            # Skip header line
+            if len(lines) > 1:
+                for line in lines[1:]:
+                    if line.strip():
+                        parts = line.split()
+                        if len(parts) >= 3:
+                            model_info = ModelInfo(
+                                name=parts[0],
+                                size=parts[1] if len(parts) > 1 else None,
+                                modified=parts[2] if len(parts) > 2 else None,
+                                status="available"
+                            )
+                            models.append(model_info)
+            
+            return models
+            
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to list Ollama models: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to list models: {e}")
+        except FileNotFoundError:
+            raise HTTPException(status_code=500, detail="Ollama not found. Please install Ollama first.")
+    
+    async def load_model(self, model_name: str) -> ModelInfo:
+        """Load/run an Ollama model."""
+        try:
+            # Use 'ollama run' to load the model (this will download if not available)
+            process = subprocess.Popen(
+                ["ollama", "run", model_name, "--"],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            # Send a simple prompt and close to load the model
+            process.stdin.write("Hello\n")
+            process.stdin.close()
+            process.wait(timeout=30)
+            
+            # Update current model in config
+            if self.models_config_path.exists():
+                with open(self.models_config_path, 'r') as f:
+                    config = json.load(f)
+            else:
+                config = {"model_settings": {}, "current_model": None, "last_updated": None}
+            
+            config["current_model"] = model_name
+            config["last_updated"] = datetime.now().isoformat()
+            self._save_config(config)
+            self.current_model = model_name
+            
+            return ModelInfo(name=model_name, status="available")
+            
+        except subprocess.TimeoutExpired:
+            process.kill()
+            raise HTTPException(status_code=500, detail=f"Timeout loading model: {model_name}")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to load model {model_name}: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to load model: {e}")
+        except FileNotFoundError:
+            raise HTTPException(status_code=500, detail="Ollama not found. Please install Ollama first.")
+    
+    async def download_model(self, model_name: str) -> ModelInfo:
+        """Download a model using ollama pull."""
+        try:
+            result = subprocess.run(
+                ["ollama", "pull", model_name],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            logger.info(f"Successfully downloaded model: {model_name}")
+            return ModelInfo(name=model_name, status="available")
+            
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to download model {model_name}: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to download model: {e}")
+        except FileNotFoundError:
+            raise HTTPException(status_code=500, detail="Ollama not found. Please install Ollama first.")
+    
+    async def remove_model(self, model_name: str) -> bool:
+        """Remove/eject a model using ollama rm."""
+        try:
+            result = subprocess.run(
+                ["ollama", "rm", model_name],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            # If this was the current model, clear it
+            if self.current_model == model_name:
+                if self.models_config_path.exists():
+                    with open(self.models_config_path, 'r') as f:
+                        config = json.load(f)
+                    config["current_model"] = None
+                    config["last_updated"] = datetime.now().isoformat()
+                    self._save_config(config)
+                    self.current_model = None
+            
+            logger.info(f"Successfully removed model: {model_name}")
+            return True
+            
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to remove model {model_name}: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to remove model: {e}")
+        except FileNotFoundError:
+            raise HTTPException(status_code=500, detail="Ollama not found. Please install Ollama first.")
+    
+    def get_system_prompt(self, model_name: str) -> Optional[str]:
+        """Get system prompt for a specific model."""
+        try:
+            if self.prompts_config_path.exists():
+                with open(self.prompts_config_path, 'r') as f:
+                    prompts = json.load(f)
+                    return prompts.get(model_name, prompts.get("default", {}).get("system_prompt"))
+            return None
+        except Exception as e:
+            logger.error(f"Failed to get system prompt for {model_name}: {e}")
+            return None
+    
+    def set_system_prompt(self, model_name: str, prompt: str):
+        """Set system prompt for a specific model."""
+        try:
+            if self.prompts_config_path.exists():
+                with open(self.prompts_config_path, 'r') as f:
+                    prompts = json.load(f)
+            else:
+                prompts = {}
+            
+            if model_name not in prompts:
+                prompts[model_name] = {}
+            
+            prompts[model_name]["system_prompt"] = prompt
+            prompts[model_name]["created_at"] = datetime.now().isoformat()
+            
+            self._save_prompts(prompts)
+            
+        except Exception as e:
+            logger.error(f"Failed to set system prompt for {model_name}: {e}")
+            raise
+    
+    def get_model_settings(self, model_name: str) -> Optional[Dict[str, Any]]:
+        """Get generation settings for a specific model."""
+        try:
+            if self.models_config_path.exists():
+                with open(self.models_config_path, 'r') as f:
+                    config = json.load(f)
+                    return config.get("model_settings", {}).get(model_name, config.get("model_settings", {}).get("default"))
+            return None
+        except Exception as e:
+            logger.error(f"Failed to get model settings for {model_name}: {e}")
+            return None
+    
+    def set_model_settings(self, model_name: str, settings: Dict[str, Any]):
+        """Set generation settings for a specific model."""
+        try:
+            if self.models_config_path.exists():
+                with open(self.models_config_path, 'r') as f:
+                    config = json.load(f)
+            else:
+                config = {"model_settings": {}, "current_model": None, "last_updated": None}
+            
+            if "model_settings" not in config:
+                config["model_settings"] = {}
+            
+            config["model_settings"][model_name] = settings
+            config["last_updated"] = datetime.now().isoformat()
+            
+            self._save_config(config)
+            
+        except Exception as e:
+            logger.error(f"Failed to set model settings for {model_name}: {e}")
+            raise
+
 # TODO: Replace with actual PersonaOS core integration
 class PersonaCore:
     """
@@ -76,6 +361,7 @@ class PersonaCore:
             "clock": {"name": "clock", "description": "Time and date utilities"},
             "prompt_engine": {"name": "prompt_engine", "description": "LLM prompt generation"}
         }
+        self.ollama_manager = OllamaManager()
         logger.info("PersonaCore initialized (placeholder)")
     
     def respond(self, message: str, context: Optional[dict] = None) -> dict:
@@ -397,6 +683,248 @@ async def submit_setup_config(request: SetupRequest):
         raise HTTPException(
             status_code=500,
             detail=f"Failed to save configuration: {str(e)}"
+        )
+
+# Model Management Endpoints
+
+@app.get("/api/models", response_model=ModelsListResponse)
+async def list_models():
+    """
+    Get list of all available Ollama models.
+    
+    Returns:
+        ModelsListResponse: List of models with current model information
+    """
+    try:
+        models = await persona_core.ollama_manager.list_models()
+        current_model = persona_core.ollama_manager.current_model
+        
+        logger.info(f"Listed {len(models)} models, current: {current_model}")
+        return ModelsListResponse(
+            models=models,
+            current_model=current_model
+        )
+        
+    except Exception as e:
+        logger.error(f"Error listing models: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to list models: {str(e)}"
+        )
+
+@app.post("/api/models/load", response_model=ModelResponse)
+async def load_model(request: LoadModelRequest):
+    """
+    Load/run a specific Ollama model.
+    
+    Args:
+        request: LoadModelRequest containing the model name
+        
+    Returns:
+        ModelResponse: Success status and model information
+    """
+    try:
+        if not request.model_name.strip():
+            raise HTTPException(status_code=400, detail="Model name cannot be empty")
+        
+        logger.info(f"Loading model: {request.model_name}")
+        model = await persona_core.ollama_manager.load_model(request.model_name)
+        
+        return ModelResponse(
+            success=True,
+            message=f"Model '{request.model_name}' loaded successfully",
+            model=model
+        )
+        
+    except Exception as e:
+        logger.error(f"Error loading model {request.model_name}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to load model: {str(e)}"
+        )
+
+@app.post("/api/models/{model_name}/download", response_model=ModelResponse)
+async def download_model(model_name: str):
+    """
+    Download a model using ollama pull.
+    
+    Args:
+        model_name: Name of the model to download
+        
+    Returns:
+        ModelResponse: Success status and model information
+    """
+    try:
+        if not model_name.strip():
+            raise HTTPException(status_code=400, detail="Model name cannot be empty")
+        
+        logger.info(f"Downloading model: {model_name}")
+        model = await persona_core.ollama_manager.download_model(model_name)
+        
+        return ModelResponse(
+            success=True,
+            message=f"Model '{model_name}' downloaded successfully",
+            model=model
+        )
+        
+    except Exception as e:
+        logger.error(f"Error downloading model {model_name}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to download model: {str(e)}"
+        )
+
+@app.delete("/api/models/{model_name}", response_model=ModelResponse)
+async def remove_model(model_name: str):
+    """
+    Remove/eject a model using ollama rm.
+    
+    Args:
+        model_name: Name of the model to remove
+        
+    Returns:
+        ModelResponse: Success status
+    """
+    try:
+        if not model_name.strip():
+            raise HTTPException(status_code=400, detail="Model name cannot be empty")
+        
+        logger.info(f"Removing model: {model_name}")
+        success = await persona_core.ollama_manager.remove_model(model_name)
+        
+        if success:
+            return ModelResponse(
+                success=True,
+                message=f"Model '{model_name}' removed successfully"
+            )
+        else:
+            raise HTTPException(status_code=500, detail="Failed to remove model")
+        
+    except Exception as e:
+        logger.error(f"Error removing model {model_name}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to remove model: {str(e)}"
+        )
+
+# System Prompt Management Endpoints
+
+@app.get("/api/models/{model_name}/prompt", response_model=SystemPromptResponse)
+async def get_system_prompt(model_name: str):
+    """
+    Get system prompt for a specific model.
+    
+    Args:
+        model_name: Name of the model
+        
+    Returns:
+        SystemPromptResponse: System prompt content
+    """
+    try:
+        prompt = persona_core.ollama_manager.get_system_prompt(model_name)
+        
+        return SystemPromptResponse(
+            success=True,
+            message="System prompt retrieved successfully",
+            system_prompt=prompt
+        )
+        
+    except Exception as e:
+        logger.error(f"Error getting system prompt for {model_name}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get system prompt: {str(e)}"
+        )
+
+@app.post("/api/models/{model_name}/prompt", response_model=SystemPromptResponse)
+async def set_system_prompt(model_name: str, request: SystemPromptRequest):
+    """
+    Set system prompt for a specific model.
+    
+    Args:
+        model_name: Name of the model
+        request: SystemPromptRequest containing the prompt
+        
+    Returns:
+        SystemPromptResponse: Success status
+    """
+    try:
+        if not request.system_prompt.strip():
+            raise HTTPException(status_code=400, detail="System prompt cannot be empty")
+        
+        persona_core.ollama_manager.set_system_prompt(model_name, request.system_prompt)
+        
+        return SystemPromptResponse(
+            success=True,
+            message=f"System prompt updated for model '{model_name}'",
+            system_prompt=request.system_prompt
+        )
+        
+    except Exception as e:
+        logger.error(f"Error setting system prompt for {model_name}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to set system prompt: {str(e)}"
+        )
+
+# Model Settings Management Endpoints
+
+@app.get("/api/models/{model_name}/settings", response_model=ModelSettingsResponse)
+async def get_model_settings(model_name: str):
+    """
+    Get generation settings for a specific model.
+    
+    Args:
+        model_name: Name of the model
+        
+    Returns:
+        ModelSettingsResponse: Model settings
+    """
+    try:
+        settings = persona_core.ollama_manager.get_model_settings(model_name)
+        
+        return ModelSettingsResponse(
+            success=True,
+            message="Model settings retrieved successfully",
+            settings=settings
+        )
+        
+    except Exception as e:
+        logger.error(f"Error getting model settings for {model_name}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get model settings: {str(e)}"
+        )
+
+@app.post("/api/models/{model_name}/settings", response_model=ModelSettingsResponse)
+async def set_model_settings(model_name: str, request: ModelSettingsRequest):
+    """
+    Set generation settings for a specific model.
+    
+    Args:
+        model_name: Name of the model
+        request: ModelSettingsRequest containing the settings
+        
+    Returns:
+        ModelSettingsResponse: Success status
+    """
+    try:
+        if not request.settings:
+            raise HTTPException(status_code=400, detail="Settings cannot be empty")
+        
+        persona_core.ollama_manager.set_model_settings(model_name, request.settings)
+        
+        return ModelSettingsResponse(
+            success=True,
+            message=f"Settings updated for model '{model_name}'",
+            settings=request.settings
+        )
+        
+    except Exception as e:
+        logger.error(f"Error setting model settings for {model_name}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to set model settings: {str(e)}"
         )
 
 # TODO: Add additional endpoints for:
