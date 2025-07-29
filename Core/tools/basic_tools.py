@@ -6,6 +6,13 @@ import re
 from typing import Dict, Any, Optional
 from .tool_registry import BaseTool, ToolResult, VoiceToolContext
 
+# Import parameter collection types if available
+try:
+    from .voice_parameter_collector import ParameterSpec, ParameterType
+except ImportError:
+    ParameterSpec = None
+    ParameterType = None
+
 class WebSearchTool(BaseTool):
     def __init__(self):
         super().__init__("web_search", "Search the web for information")
@@ -296,6 +303,49 @@ class TimerTool(BaseTool):
         super().__init__("timer", "Set a timer for a specified duration")
         self.active_timers = {}
         self.voice_aliases = ["set timer", "timer", "countdown", "remind me"]
+        
+        # Enable advanced parameter collection for this tool
+        if ParameterSpec and ParameterType:
+            self.supports_parameter_collection = True
+            self.parameter_specs = [
+                ParameterSpec(
+                    name="duration",
+                    param_type=ParameterType.INTEGER,
+                    required=True,
+                    description="How long should the timer run?",
+                    voice_prompts=[
+                        "How long should the timer run? Please specify in minutes.",
+                        "What duration would you like for the timer?"
+                    ],
+                    validation_rules={
+                        "min_value": 1,
+                        "max_value": 1440  # 24 hours in minutes
+                    },
+                    confirmation_required=False
+                ),
+                ParameterSpec(
+                    name="unit",
+                    param_type=ParameterType.CHOICE,
+                    required=False,
+                    description="Time unit for the timer",
+                    choices=["second", "minute", "hour"],
+                    default_value="minute",
+                    voice_prompts=[
+                        "What time unit? Say seconds, minutes, or hours."
+                    ],
+                    confirmation_required=False
+                ),
+                ParameterSpec(
+                    name="label",
+                    param_type=ParameterType.STRING,
+                    required=False,
+                    description="Optional label for the timer",
+                    voice_prompts=[
+                        "Would you like to add a label for this timer? Or say skip to continue."
+                    ],
+                    confirmation_required=False
+                )
+            ]
     
     def execute(self, duration: int = 5, unit: str = "minute", **kwargs) -> ToolResult:
         if duration <= 0:

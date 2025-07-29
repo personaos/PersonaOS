@@ -1,0 +1,118 @@
+# HelloWorld Plugin Metadata for PersonaOS
+# This file provides metadata for the plugin discovery system
+
+name: "hello_world"
+version: "1.0.0"
+description: "A simple example plugin that provides greeting functionality with voice support"
+author: "PersonaOS Team"
+license: "MIT"
+website: "https://github.com/personaos/plugins"
+
+# Plugin classification
+plugin_type: "TOOL"
+category: "example"
+tags:
+  - "greeting"
+  - "example"
+  - "voice"
+  - "demo"
+
+# System requirements
+min_personaos_version: "0.1.0"
+python_version: ">=3.8"
+
+# Dependencies
+dependencies: []
+
+# Permissions required by this plugin
+permissions:
+  - name: "audio.speak"
+    description: "Provide audio responses"
+    required: false
+  - name: "config.read"
+    description: "Read configuration settings"
+    required: false
+
+# Tool configuration
+tool_info:
+  name: "hello"
+  description: "Greet the user with a personalized message"
+  category: "social"
+  supports_voice: true
+  voice_aliases:
+    - "greet"
+    - "say hello"
+    - "hello there"
+    - "good morning"
+    - "good afternoon"
+    - "good evening"
+  requires_confirmation: false
+  supports_parameter_collection: true
+  
+  # Parameter specifications for voice collection
+  parameters:
+    - name: "name"
+      type: "string"
+      required: false
+      description: "Name to include in greeting"
+      voice_patterns:
+        - "hello {name}"
+        - "greet {name}"
+        - "say hello to {name}"
+    
+    - name: "language"
+      type: "string"
+      required: false
+      description: "Language for greeting"
+      choices: ["en", "es", "fr", "de", "it", "pt"]
+      default: "en"
+      voice_patterns:
+        - "in {language}"
+        - "{language} greeting"
+
+# Security configuration
+security:
+  risk_level: "low"
+  sandbox_required: false
+  network_access: false
+  file_system_access: false
+  
+# Configuration schema
+config_schema:
+  default_language:
+    type: "string"
+    default: "en"
+    description: "Default language for greetings"
+    choices: ["en", "es", "fr", "de", "it", "pt"]
+  
+  custom_greetings:
+    type: "object"
+    default: {}
+    description: "Custom greeting messages by language"
+    
+  voice_response_enabled:
+    type: "boolean"
+    default: true
+    description: "Enable enhanced voice responses"
+
+# Plugin metadata
+metadata:
+  documentation_url: "https://docs.personaos.org/plugins/hello-world"
+  source_url: "https://github.com/personaos/plugins/hello-world"
+  bug_reports_url: "https://github.com/personaos/plugins/issues"
+  
+  # Development info
+  development_status: "stable"
+  tested_platforms:
+    - "windows"
+    - "linux" 
+    - "macos"
+  
+  # Localization
+  supported_languages:
+    - "en"
+    - "es"
+    - "fr"
+    - "de"
+    - "it"
+    - "pt"

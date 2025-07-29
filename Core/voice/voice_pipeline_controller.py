@@ -17,9 +17,18 @@ from loguru import logger
 
 from ..sst.voice_to_intent_bridge import VoiceToIntentBridge
 from ..intent.intent_processor import IntentProcessor
+from ..intent.safety_validator import SafetyValidator
 from ..llm.llm_handler import LLMManager
 from ..llm.memory import MemoryManager
 from ..audio import AudioProcessor
+from ..tools.tool_registry import ToolRegistry, VoiceToolContext
+from ..tools.workflow_manager import WorkflowManager
+
+# Import for tool result processing
+try:
+    from ..tools.tool_audio_feedback import ToolAudioFeedback
+except ImportError:
+    ToolAudioFeedback = None
 
 class VoiceState(Enum):
     """Voice conversation states."""
@@ -55,6 +64,22 @@ class VoicePipelineController:
         self.voice_bridge = None
         self.intent_processor = IntentProcessor(config)
         self.audio_processor = AudioProcessor(config)
+        
+        # Initialize voice-enabled tool system
+        self.tool_registry = ToolRegistry(self.audio_processor, config)
+        self.safety_validator = SafetyValidator(config)
+        self.workflow_manager = WorkflowManager(self.tool_registry, None, config)
+        self.emergency_controller = EmergencyController(
+            self.tool_registry, self.workflow_manager, None, config
+        )
+        
+        # Voice command patterns for tool detection
+        self.voice_tool_patterns = self._load_voice_tool_patterns()
+        self.workflow_patterns = self._load_workflow_patterns()
+        
+        # Active workflow tracking
+        self.active_workflow_id = None
+        self.workflow_context = {}
         
         # State management
         self.current_state = VoiceState.DISABLED
@@ -93,7 +118,7 @@ class VoicePipelineController:
         self.tts_fallback_enabled = config.get("tts_fallback_enabled", True)
         self.tts_error_count = 0
         
-        logger.info("VoicePipelineController initialized")
+        logger.info("VoicePipelineController initialized with voice tool and workflow support")
     
     def initialize(self) -> bool:
         """
@@ -573,6 +598,232 @@ class VoicePipelineController:
             }
         }
     
+    def _handle_emergency_stop(self, voice_text: str) -> Dict[str, Any]:
+        """
+        Handle emergency stop triggered by voice command.
+        
+        Args:
+            voice_text: Voice command that triggered emergency
+            
+        Returns:
+            Emergency stop result
+        """
+        logger.critical(f"Emergency stop triggered by voice: '{voice_text}'")
+        
+        # Trigger emergency stop
+        result = self.emergency_controller.trigger_emergency_stop(
+            f"Voice command: '{voice_text}'",
+            {
+                "voice_input": voice_text,
+                "timestamp": time.time(),
+                "voice_state": self.current_state.value,
+                "active_workflow": self.active_workflow_id
+            }
+        )
+        
+        # Clear active workflow immediately
+        self._clear_active_workflow()
+        
+        # Set voice state to error to prevent further processing
+        self._set_state(VoiceState.ERROR)
+        
+        return {
+            "action": "emergency_stop",
+            "success": result["success"],
+            "event_id": result.get("event_id"),
+            "message": "Emergency stop executed",
+            "input_type": "voice_emergency",
+            "emergency_result": result
+        }
+    
+    def _handle_emergency_event(self, event, stop_results):
+        """
+        Callback for emergency events.
+        
+        Args:
+            event: Emergency event
+            stop_results: Results of emergency stop
+        """
+        logger.critical(f"Emergency event callback: {event.event_type} - {event.trigger}")
+        
+        # Stop voice session immediately
+        self.stop_voice_session()
+        
+        # Call external emergency callback if set
+        if hasattr(self, 'external_emergency_callback') and self.external_emergency_callback:
+            try:
+                self.external_emergency_callback(event, stop_results)
+            except Exception as e:
+                logger.error(f"External emergency callback failed: {e}")
+    
+    def _handle_error_event(self, event, recovery_result):
+        """
+        Callback for error events.
+        
+        Args:
+            event: Error event
+            recovery_result: Results of error recovery attempt
+        """
+        logger.error(f"Error event callback: {event.trigger} - Recovery: {recovery_result.get('success', False)}")
+        
+        # If recovery failed and this is a critical error, consider voice fallback
+        if not recovery_result.get("success") and event.context.get("consecutive_errors", 0) >= 2:
+            logger.warning("Multiple errors detected, considering voice system fallback")
+            
+            # Trigger fallback to text mode if callback is available
+            if self.fallback_callback:
+                try:
+                    self.fallback_callback(
+                        f"Voice system experiencing errors. Error: {event.context.get('error', 'Unknown')}"
+                    )
+                except Exception as e:
+                    logger.error(f"Fallback callback failed: {e}")
+    
+    def _handle_recovery_event(self, old_state, new_state):
+        """
+        Callback for recovery events.
+        
+        Args:
+            old_state: Previous emergency state
+            new_state: New state after recovery
+        """
+        logger.info(f"Recovery event callback: {old_state.value} -> {new_state.value}")
+        
+        # If recovered to normal, try to restart voice session
+        if new_state.value == "normal" and not self.active_session:
+            logger.info("Attempting to restart voice session after recovery")
+            try:
+                self.start_voice_session()
+            except Exception as e:
+                logger.error(f"Failed to restart voice session after recovery: {e}")
+    
+    def handle_tool_timeout(self, tool_name: str, session_id: str, timeout_seconds: float) -> Dict[str, Any]:
+        """
+        Handle tool execution timeout.
+        
+        Args:
+            tool_name: Name of the tool that timed out
+            session_id: Tool execution session ID
+            timeout_seconds: How long the timeout was
+            
+        Returns:
+            Timeout handling result
+        """
+        logger.warning(f"Tool timeout: {tool_name} (session: {session_id}) after {timeout_seconds}s")
+        
+        # Create timeout exception
+        timeout_error = TimeoutError(f"Tool {tool_name} timed out after {timeout_seconds} seconds")
+        
+        # Handle through emergency controller
+        error_result = self.emergency_controller.handle_tool_error(
+            tool_name, timeout_error, {
+                "session_id": session_id,
+                "timeout_seconds": timeout_seconds,
+                "error_type": "timeout"
+            }
+        )
+        
+        # Cancel the tool session
+        if self.tool_registry:
+            try:
+                self.tool_registry.cancel_tool_execution(session_id, "Tool execution timeout")
+            except Exception as e:
+                logger.error(f"Failed to cancel timed out tool: {e}")
+        
+        return {
+            "action": "tool_timeout_handled",
+            "tool_name": tool_name,
+            "session_id": session_id,
+            "timeout_seconds": timeout_seconds,
+            "recovery_result": error_result
+        }
+    
+    def emergency_stop_all(self, reason: str = "Manual emergency stop") -> Dict[str, Any]:
+        """
+        Manually trigger emergency stop of all operations.
+        
+        Args:
+            reason: Reason for emergency stop
+            
+        Returns:
+            Emergency stop result
+        """
+        logger.critical(f"Manual emergency stop triggered: {reason}")
+        
+        result = self.emergency_controller.trigger_emergency_stop(
+            reason,
+            {
+                "manual_trigger": True,
+                "voice_state": self.current_state.value,
+                "active_session": self.active_session,
+                "active_workflow": self.active_workflow_id
+            }
+        )
+        
+        # Clear active workflow
+        self._clear_active_workflow()
+        
+        # Stop voice session
+        self.stop_voice_session()
+        
+        return result
+    
+    def get_emergency_status(self) -> Dict[str, Any]:
+        """
+        Get comprehensive emergency system status.
+        
+        Returns:
+            Emergency status information
+        """
+        emergency_status = self.emergency_controller.get_emergency_status()
+        
+        return {
+            "voice_pipeline": {
+                "state": self.current_state.value,
+                "active_session": self.active_session,
+                "active_workflow": self.active_workflow_id
+            },
+            "emergency_system": emergency_status,
+            "recent_errors": self.emergency_controller.get_emergency_history(5)
+        }
+    
+    def attempt_emergency_recovery(self) -> Dict[str, Any]:
+        """
+        Attempt to recover from emergency state.
+        
+        Returns:
+            Recovery attempt result
+        """
+        logger.info("Attempting emergency recovery")
+        
+        recovery_result = self.emergency_controller.attempt_system_recovery()
+        
+        if recovery_result.get("success"):
+            # Try to reinitialize voice components
+            try:
+                if self.current_state == VoiceState.ERROR:
+                    self._set_state(VoiceState.IDLE)
+                
+                logger.info("Voice pipeline recovery completed")
+                
+            except Exception as e:
+                logger.error(f"Voice pipeline recovery failed: {e}")
+                recovery_result["voice_recovery_error"] = str(e)
+        
+        return recovery_result
+    
+    def set_emergency_callbacks(self, emergency_callback=None, error_callback=None, recovery_callback=None):
+        """
+        Set external callbacks for emergency events.
+        
+        Args:
+            emergency_callback: Called on emergency events
+            error_callback: Called on error events  
+            recovery_callback: Called on recovery events
+        """
+        self.external_emergency_callback = emergency_callback
+        # The emergency controller callbacks are set internally
+    
     def set_callbacks(self, 
                      state_change_callback: Optional[Callable] = None,
                      response_callback: Optional[Callable] = None,
@@ -804,6 +1055,90 @@ class VoicePipelineController:
         except Exception as e:
             logger.error(f"Failed to get available voices: {e}")
             return {}
+    
+    def _load_voice_tool_patterns(self) -> Dict[str, List[str]]:
+        """
+        Load voice command patterns for tool detection and parameter extraction.
+        
+        Returns:
+            Dictionary mapping tools to voice command patterns
+        """
+        return {
+            "web_search": [
+                r"search (?:for |about )?(.+)",
+                r"google (.+)",
+                r"look up (.+)",
+                r"find (?:information about |info about )?(.+)",
+                r"what is (.+)",
+                r"who is (.+)",
+                r"where is (.+)",
+                r"how to (.+)"
+            ],
+            "weather": [
+                r"(?:what'?s the |how'?s the )?weather (?:in |for |at )?(.+)",
+                r"temperature (?:in |for |at )?(.+)",
+                r"weather forecast (?:for )?(.+)",
+                r"what'?s the weather like (?:in |for |at )?(.+)"
+            ],
+            "time": [
+                r"what time is it",
+                r"current time",
+                r"time now",
+                r"what'?s the time",
+                r"tell me the time",
+                r"date and time"
+            ],
+            "calculator": [
+                r"calculate (.+)",
+                r"what is (.+) (?:plus|minus|times|divided by) (.+)",
+                r"compute (.+)",
+                r"math (.+)",
+                r"(.+) equals?\?",
+                r"solve (.+)"
+            ],
+            "timer": [
+                r"set (?:a )?timer for (\d+) (second|minute|hour)s?",
+                r"timer for (\d+) (second|minute|hour)s?",
+                r"countdown (\d+) (second|minute|hour)s?",
+                r"remind me in (\d+) (second|minute|hour)s?",
+                r"start (?:a )?(\d+) (second|minute|hour) timer"
+            ],
+            
+            # Emergency and control patterns
+            "emergency": [
+                r"stop",
+                r"cancel",
+                r"abort",
+                r"emergency stop",
+                r"halt",
+                r"quit"
+            ]
+        }
+    
+    def _load_workflow_patterns(self) -> Dict[str, List[str]]:
+        """
+        Load voice command patterns for workflow detection.
+        
+        Returns:
+            Dictionary mapping workflow templates to voice patterns
+        """
+        return {
+            "web_research": [
+                r"research (.+) and (?:get|check) (?:the )?weather",
+                r"search for (.+) and weather",
+                r"find information about (.+) and weather (?:in |for )?(.+)?"
+            ],
+            "calculation_with_timer": [
+                r"calculate (.+) and set (?:a )?timer",
+                r"do math (.+) then timer",
+                r"compute (.+) and start timer"
+            ],
+            "search_and_summarize": [
+                r"search and summarize (.+)",
+                r"research (.+) and tell me the time",
+                r"find (.+) and current time"
+            ]
+        }
 
     def is_voice_available(self) -> bool:
         """

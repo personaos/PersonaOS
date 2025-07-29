@@ -25,3 +25,9 @@ pvporcupine              # Picovoice Porcupine wake word engine
 
 # CLI and terminal improvements
 colorama                 # Cross-platform terminal color support
+
+# Plugin System
+watchdog                 # File system monitoring for hot reload functionality
+requests                 # HTTP client for repository access (already included above)
+urllib3                  # HTTP library with retry support
+psutil                   # Process and system monitoring for security management
