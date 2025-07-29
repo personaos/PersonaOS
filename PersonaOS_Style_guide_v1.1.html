@@ -119,6 +119,14 @@
             --space-20: 5rem;
             --space-24: 6rem;
             --space-32: 8rem;
+            
+            /* Modern CLI Theme (Dark) */
+            --cli-bg: #21252B;
+            --cli-text-default: #cbd5e1;
+            --cli-text-muted: #94a3b8;
+            --cli-accent-blue: #60a5fa;
+            --cli-accent-purple: #c084fc;
+            --cli-cursor-color: #f8fafc;
         }
 
         /* Light Mode Overrides */
@@ -144,6 +152,14 @@
             --warning-bg: #fef3c7;
             --error-bg: #fee2e2;
             --info-bg: #dbeafe;
+            
+            /* Modern CLI Theme (Light) */
+            --cli-bg: #f8fafc;
+            --cli-text-default: #334155;
+            --cli-text-muted: #64748b;
+            --cli-accent-blue: #2563eb;
+            --cli-accent-purple: #7c3aed;
+            --cli-cursor-color: #0f172a;
         }
 
         /* Base Styles */
@@ -826,6 +842,77 @@
             color: var(--text-muted);
             font-family: var(--font-mono);
         }
+        
+        /* CLI Interface */
+        .cli-container {
+            background: var(--cli-bg);
+            font-family: var(--font-mono);
+            color: var(--cli-text-default);
+            padding: var(--space-6);
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-primary);
+            transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .cli-output {
+            height: 400px;
+            overflow-y: auto;
+            word-wrap: break-word;
+            font-size: var(--text-base);
+            line-height: var(--leading-relaxed);
+        }
+        .cli-output p {
+             margin-bottom: var(--space-2);
+        }
+        .cli-output .command-out {
+            color: var(--cli-text-default);
+        }
+
+        .cli-input-line {
+            display: flex;
+            align-items: center;
+            font-size: var(--text-base);
+            margin-top: var(--space-4);
+            position: relative;
+        }
+
+        .cli-prompt {
+            color: var(--cli-accent-purple);
+            margin-right: var(--space-2);
+        }
+
+        .cli-input {
+            background: transparent;
+            border: none;
+            color: var(--cli-text-default);
+            font-family: var(--font-mono);
+            font-size: inherit;
+            flex-grow: 1;
+        }
+        .cli-input:focus {
+            outline: none;
+        }
+        
+        .cli-input:focus ~ .cli-cursor {
+             animation: blink 1s step-end infinite;
+        }
+
+        .cli-cursor {
+            width: 8px; /* Width of a character */
+            height: 1.25rem; /* Height of the line */
+            background: var(--cli-cursor-color);
+            display: inline-block;
+            vertical-align: middle;
+            position: absolute;
+            left: calc(1ch + 8px); /* Position after prompt */
+        }
+
+        /* CLI Syntax Highlighting */
+        .cli-bullet { color: var(--cli-accent-purple); }
+        .cli-link { color: var(--cli-accent-blue); }
+        .cli-checkbox { color: var(--cli-accent-blue); padding-right: var(--space-2); }
+        .cli-comment { color: var(--cli-text-muted); }
+
 
         /* Utility Classes for Colors */
         .bg-primary-color { background: var(--primary); }
@@ -862,6 +949,11 @@
             to {
                 transform: rotate(360deg);
             }
+        }
+
+        @keyframes blink {
+            from, to { opacity: 0; }
+            50% { opacity: 1; }
         }
 
         /* Responsive Design */
@@ -965,10 +1057,10 @@
                     <h3 style="margin-bottom: var(--space-6);">Heading Hierarchy</h3>
                     <h1 style="margin-bottom: var(--space-4);">Heading 1 - Hero Title</h1>
                     <h2 style="margin-bottom: var(--space-4);">Heading 2 - Page Section</h2>
-                    <h3 style="margin-bottom: var(--space-4);">Heading 3 - Subsection</h3>
-                    <h4 style="margin-bottom: var(--space-4);">Heading 4 - Card Title</h4>
-                    <h5 style="margin-bottom: var(--space-4);">Heading 5 - Component Title</h5>
-                    <h6 style="margin-bottom: var(--space-4);">Heading 6 - Small Heading</h6>
+                    <h3 style="margin-bottom: var(--space-4);">Subsection</h3>
+                    <h4 style="margin-bottom: var(--space-4);">Card Title</h4>
+                    <h5 style="margin-bottom: var(--space-4);">Component Title</h5>
+                    <h6 style="margin-bottom: var(--space-4);">Small Heading</h6>
                 </div>
                 <div>
                     <h3 style="margin-bottom: var(--space-6);">Body Text & Utilities</h3>
@@ -1190,10 +1282,29 @@
             </div>
 
             <!-- Modal Demo -->
-            <div>
+            <div style="margin-bottom: var(--space-16);">
                 <h3 style="margin-bottom: var(--space-6);">Modal</h3>
                 <button class="btn btn-primary" onclick="openModal()">Open Modal</button>
             </div>
+
+            <!-- CLI -->
+            <div>
+                <h3 style="margin-bottom: var(--space-6);">CLI Interface</h3>
+                 <div class="cli-container" onclick="document.getElementById('cli-input-field').focus()">
+                    <div class="cli-output" id="cli-output-area">
+                        <p>PersonaOS [Version 0.1.0]</p>
+                        <p>(c) 2025 PersonaOS All rights reserved.</p>
+                        <p>Initializing secure connection... OK</p>
+                        <p>Loading user profile... OK</p>>
+                    </div>
+                    <div class="cli-input-line">
+                        <span class="cli-prompt">></span>
+                        <input type="text" id="cli-input-field" class="cli-input" autocomplete="off">
+                        <span class="cli-cursor" id="cli-cursor-element"></span>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </section>
 
@@ -1307,6 +1418,79 @@
                 }
             });
         });
+        
+        // CLI Functionality
+        const cliInput = document.getElementById('cli-input-field');
+        const cliOutput = document.getElementById('cli-output-area');
+        const cliCursor = document.getElementById('cli-cursor-element');
+        const cliPrompt = document.querySelector('.cli-prompt');
+
+        cliInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && cliInput.value) {
+                const command = cliInput.value;
+                const prompt = document.createElement('p');
+                prompt.innerHTML = `<span class="cli-prompt">></span> ${command}`;
+                cliOutput.appendChild(prompt);
+                
+                handleCommand(command.toLowerCase());
+                
+                cliInput.value = '';
+                cliOutput.scrollTop = cliOutput.scrollHeight;
+            }
+            updateCursorPosition();
+        });
+        cliInput.addEventListener('input', updateCursorPosition);
+        cliInput.addEventListener('focus', updateCursorPosition);
+
+
+        function updateCursorPosition() {
+             // Create a temporary span to measure text width
+            const tempSpan = document.createElement('span');
+            tempSpan.style.visibility = 'hidden';
+            tempSpan.style.position = 'absolute';
+            tempSpan.style.fontFamily = getComputedStyle(cliInput).fontFamily;
+            tempSpan.style.fontSize = getComputedStyle(cliInput).fontSize;
+            tempSpan.textContent = cliInput.value;
+            document.body.appendChild(tempSpan);
+            
+            const textWidth = tempSpan.offsetWidth;
+            document.body.removeChild(tempSpan);
+            
+            const promptWidth = cliPrompt.offsetWidth + 8; // 8px for margin
+            cliCursor.style.left = `${promptWidth + textWidth}px`;
+        }
+
+        function handleCommand(command) {
+            const output = document.createElement('p');
+            output.classList.add('command-out');
+            
+            switch (command) {
+                case 'help':
+                    output.innerHTML = `<span class="cli-comment">Available commands:</span><br>
+                                        - <span class="cli-link">help</span>: Shows this list of commands.<br>
+                                        - <span class="cli-link">status</span>: Displays the current AI status.<br>
+                                        - <span class="cli-link">clear</span>: Clears the terminal screen.<br>
+                                        - <span class="cli-link">date</span>: Shows the current system date.`;
+                    break;
+                case 'status':
+                    output.textContent = 'System Status: All systems nominal.';
+                    break;
+                case 'clear':
+                    cliOutput.innerHTML = ''; // Clears all children
+                    return; 
+                case 'date':
+                    output.textContent = `Current Date: ${new Date().toUTCString()}`;
+                    break;
+                default:
+                    output.innerHTML = `<span style="color: var(--error);">Error:</span> Command not found: '${command}'. Type '<span class="cli-link">help</span>' for a list of commands.`;
+            }
+            
+            cliOutput.appendChild(output);
+            cliOutput.scrollTop = cliOutput.scrollHeight;
+        }
+
+        // Initialize cursor position
+        updateCursorPosition();
     </script>
 </body>
 </html>
