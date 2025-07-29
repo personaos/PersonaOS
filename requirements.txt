@@ -5,8 +5,20 @@ loguru                   # Advanced logging
 python-dotenv            # Load environment variables from .env
 requests                 # For API calls and potential web integrations
 
+# Direct Model Execution (DME)
+llama-cpp-python         # Local GGUF model execution via llama.cpp
+
 # API Key Security & Management
 cryptography             # For secure API key encryption and storage
+
+# Speech-to-Text (STT)
+openai-whisper           # OpenAI Whisper for local STT processing
+pyaudio                  # Audio capture from microphone
+
+# Text-to-Speech (TTS)
+pyttsx3                  # Cross-platform TTS engine for offline speech synthesis
+pydub                    # Audio processing and manipulation
+pygame                   # Audio playback and sound management
 
 # Wake word detection
 pvporcupine              # Picovoice Porcupine wake word engine

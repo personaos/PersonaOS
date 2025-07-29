@@ -1,0 +1,71 @@
+# PersonaOS Model Configuration
+# This file defines available model backends and their settings
+
+# Default model backend to use
+default_backend: "ollama"
+
+# Model backend configurations
+backends:
+  
+  # Ollama backend (existing)
+  ollama:
+    type: "ollama"
+    model: "openhermes"
+    api_url: null  # null = CLI mode, set URL for API mode
+    
+  # llama-cpp-python backend (Direct Model Execution)
+  llama_cpp:
+    type: "llama_cpp"
+    model_path: "models/openhermes-2.5-mistral-7b.Q4_K_M.gguf"
+    
+    # Model loading parameters
+    n_ctx: 2048              # Context length
+    n_threads: -1            # CPU threads (-1 = auto-detect)
+    n_gpu_layers: 0          # GPU layers (0 = CPU-only)
+    verbose: false           # Enable verbose logging
+    
+    # Generation parameters
+    temperature: 0.7         # Sampling temperature (0.0-2.0)
+    top_p: 0.9              # Top-p sampling (0.0-1.0)
+    max_tokens: 512         # Maximum response tokens
+    stop_sequences: []       # Stop generation at these sequences
+    
+  # Example configuration for a different model
+  llama_cpp_large:
+    type: "llama_cpp"
+    model_path: "models/llama-2-13b-chat.Q4_K_M.gguf"
+    n_ctx: 4096
+    n_threads: -1
+    n_gpu_layers: 20         # Use GPU acceleration
+    temperature: 0.8
+    top_p: 0.95
+    max_tokens: 1024
+
+# Model download/management settings
+model_management:
+  models_directory: "models"
+  auto_download: false
+  download_source: "huggingface"
+  
+  # Recommended models for download
+  recommended_models:
+    - name: "OpenHermes 2.5 Mistral 7B"
+      filename: "openhermes-2.5-mistral-7b.Q4_K_M.gguf"
+      size: "4.1GB"
+      url: "https://huggingface.co/TheBloke/OpenHermes-2.5-Mistral-7B-GGUF/resolve/main/openhermes-2.5-mistral-7b.Q4_K_M.gguf"
+      description: "Fast, high-quality 7B parameter model, good for general conversation"
+      
+    - name: "Llama 2 7B Chat"
+      filename: "llama-2-7b-chat.Q4_K_M.gguf"
+      size: "3.8GB"
+      url: "https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/main/llama-2-7b-chat.Q4_K_M.gguf"
+      description: "Official Meta Llama 2 model, excellent for chat applications"
+
+# Environment variable overrides
+# These allow runtime configuration without editing this file
+environment_overrides:
+  MODEL_BACKEND: "default_backend"
+  LLAMA_CPP_MODEL_PATH: "backends.llama_cpp.model_path"
+  LLAMA_CPP_N_CTX: "backends.llama_cpp.n_ctx"
+  LLAMA_CPP_N_GPU_LAYERS: "backends.llama_cpp.n_gpu_layers"
+  LLAMA_CPP_TEMPERATURE: "backends.llama_cpp.temperature"

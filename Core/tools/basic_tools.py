@@ -2,12 +2,17 @@ import time
 import datetime
 import requests
 import json
-from typing import Dict, Any
-from .tool_registry import BaseTool, ToolResult
+import re
+from typing import Dict, Any, Optional
+from .tool_registry import BaseTool, ToolResult, VoiceToolContext
 
 class WebSearchTool(BaseTool):
     def __init__(self):
         super().__init__("web_search", "Search the web for information")
+        self.voice_aliases = ["search", "google", "look up", "find"]
+        self.voice_parameter_patterns = {
+            "query": r"search (?:for |about )?(.+?)(?:\s|$)"
+        }
     
     def execute(self, query: str = "", **kwargs) -> ToolResult:
         if not query:
@@ -31,10 +36,50 @@ class WebSearchTool(BaseTool):
             },
             metadata={"source": "placeholder", "timestamp": time.time()}
         )
+    
+    def parse_voice_parameters(self, voice_text: str) -> Dict[str, Any]:
+        """Parse search query from voice command."""
+        params = {}
+        voice_lower = voice_text.lower()
+        
+        # Try different patterns to extract search query
+        patterns = [
+            r"search (?:for |about )?(.+)",
+            r"google (.+)",
+            r"look up (.+)",
+            r"find (.+)",
+            r"what is (.+)",
+            r"who is (.+)",
+            r"where is (.+)",
+            r"how to (.+)"
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, voice_lower)
+            if match:
+                params["query"] = match.group(1).strip()
+                break
+        
+        return params
+    
+    def format_voice_response(self, data: Any, voice_context: VoiceToolContext) -> str:
+        """Format search results for voice output."""
+        if not data or "results" not in data:
+            return "I couldn't find any search results."
+        
+        results = data["results"]
+        if not results:
+            return f"I didn't find any results for '{data.get('query', 'your search')}'."
+        
+        first_result = results[0]
+        query = data.get("query", "your search")
+        
+        return f"I found information about {query}. {first_result.get('snippet', 'Here are the search results.')}"
 
 class WeatherTool(BaseTool):
     def __init__(self):
         super().__init__("weather", "Get weather information for a location")
+        self.voice_aliases = ["weather forecast", "temperature", "how's the weather"]
     
     def execute(self, location: str = "current location", **kwargs) -> ToolResult:
         # Placeholder implementation - in real usage, integrate with weather API
@@ -49,10 +94,45 @@ class WeatherTool(BaseTool):
             },
             metadata={"source": "placeholder", "timestamp": time.time()}
         )
+    
+    def parse_voice_parameters(self, voice_text: str) -> Dict[str, Any]:
+        """Parse location from voice weather command."""
+        params = {}
+        voice_lower = voice_text.lower()
+        
+        # Patterns to extract location
+        patterns = [
+            r"weather (?:in |for |at )?(.+)",
+            r"temperature (?:in |for |at )?(.+)",
+            r"(?:how'?s the weather|weather forecast) (?:in |for |at )?(.+)",
+            r"what'?s the weather like (?:in |for |at )?(.+)"
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, voice_lower)
+            if match:
+                location = match.group(1).strip()
+                if location and location not in ["today", "now", "currently"]:
+                    params["location"] = location
+                break
+        
+        return params
+    
+    def format_voice_response(self, data: Any, voice_context: VoiceToolContext) -> str:
+        """Format weather information for voice output."""
+        if not data:
+            return "I couldn't get weather information."
+        
+        location = data.get("location", "your area")
+        temp = data.get("temperature", "unknown temperature")
+        condition = data.get("condition", "unknown conditions")
+        
+        return f"The weather in {location} is currently {condition} with a temperature of {temp}."
 
 class TimeTool(BaseTool):
     def __init__(self):
         super().__init__("time", "Get current time and date")
+        self.voice_aliases = ["current time", "what time is it", "time now", "date"]
     
     def execute(self, **kwargs) -> ToolResult:
         now = datetime.datetime.now()
@@ -65,10 +145,42 @@ class TimeTool(BaseTool):
                 "timezone": str(now.astimezone().tzinfo)
             }
         )
+    
+    def parse_voice_parameters(self, voice_text: str) -> Dict[str, Any]:
+        """Parse time-related parameters from voice command."""
+        # Time tool doesn't typically need parameters, but we can parse timezone requests
+        params = {}
+        voice_lower = voice_text.lower()
+        
+        # Check for timezone requests
+        timezone_patterns = [
+            r"time in (.+)",
+            r"what time is it in (.+)",
+            r"current time in (.+)"
+        ]
+        
+        for pattern in timezone_patterns:
+            match = re.search(pattern, voice_lower)
+            if match:
+                location = match.group(1).strip()
+                if location:
+                    params["timezone_location"] = location
+                break
+        
+        return params
+    
+    def format_voice_response(self, data: Any, voice_context: VoiceToolContext) -> str:
+        """Format time information for voice output."""
+        if not data:
+            return "I couldn't get the current time."
+        
+        formatted_time = data.get("formatted", "unknown time")
+        return f"The current time is {formatted_time}."
 
 class CalculatorTool(BaseTool):
     def __init__(self):
         super().__init__("calculator", "Perform mathematical calculations")
+        self.voice_aliases = ["calculate", "math", "compute", "what is"]
     
     def execute(self, expression: str = "", **kwargs) -> ToolResult:
         if not expression:
@@ -108,11 +220,82 @@ class CalculatorTool(BaseTool):
                 success=False,
                 error=f"Calculation error: {str(e)}"
             )
+    
+    def parse_voice_parameters(self, voice_text: str) -> Dict[str, Any]:
+        """Parse mathematical expression from voice command."""
+        params = {}
+        voice_lower = voice_text.lower()
+        
+        # Patterns to extract mathematical expressions
+        patterns = [
+            r"calculate (.+)",
+            r"what is (.+)",
+            r"compute (.+)",
+            r"math (.+)",
+            r"(.+) equals?",
+            r"(.+) is?"
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, voice_lower)
+            if match:
+                expression = match.group(1).strip()
+                # Convert spoken math to symbols
+                expression = self._convert_spoken_math(expression)
+                if expression:
+                    params["expression"] = expression
+                break
+        
+        return params
+    
+    def _convert_spoken_math(self, spoken: str) -> str:
+        """Convert spoken mathematical expressions to symbolic form."""
+        # Basic conversions for common spoken math
+        conversions = {
+            "plus": "+",
+            "add": "+",
+            "minus": "-",
+            "subtract": "-",
+            "times": "*",
+            "multiply": "*",
+            "multiplied by": "*",
+            "divide": "/",
+            "divided by": "/",
+            "squared": "**2",
+            "cubed": "**3",
+            "to the power of": "**",
+            "percent": "/100"
+        }
+        
+        result = spoken.lower()
+        for word, symbol in conversions.items():
+            result = result.replace(word, symbol)
+        
+        # Clean up extra spaces
+        result = " ".join(result.split())
+        
+        return result
+    
+    def format_voice_response(self, data: Any, voice_context: VoiceToolContext) -> str:
+        """Format calculation result for voice output."""
+        if not data:
+            return "I couldn't perform the calculation."
+        
+        expression = data.get("expression", "")
+        result = data.get("result", "")
+        
+        if expression and result is not None:
+            return f"{expression} equals {result}."
+        elif result is not None:
+            return f"The result is {result}."
+        else:
+            return "The calculation completed successfully."
 
 class TimerTool(BaseTool):
     def __init__(self):
         super().__init__("timer", "Set a timer for a specified duration")
         self.active_timers = {}
+        self.voice_aliases = ["set timer", "timer", "countdown", "remind me"]
     
     def execute(self, duration: int = 5, unit: str = "minute", **kwargs) -> ToolResult:
         if duration <= 0:
@@ -188,3 +371,55 @@ class TimerTool(BaseTool):
                 "remaining_formatted": f"{int(remaining // 60)}:{int(remaining % 60):02d}"
             }
         )
+    
+    def parse_voice_parameters(self, voice_text: str) -> Dict[str, Any]:
+        """Parse timer duration from voice command."""
+        params = {}
+        voice_lower = voice_text.lower()
+        
+        # Patterns to extract timer duration and unit
+        patterns = [
+            r"set timer for (\d+) (second|minute|hour)s?",
+            r"timer for (\d+) (second|minute|hour)s?",
+            r"countdown (\d+) (second|minute|hour)s?",
+            r"remind me in (\d+) (second|minute|hour)s?",
+            r"(\d+) (second|minute|hour) timer",
+            r"timer (\d+) (second|minute|hour)s?"
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, voice_lower)
+            if match:
+                duration = int(match.group(1))
+                unit = match.group(2)
+                params["duration"] = duration
+                params["unit"] = unit
+                break
+        
+        # If no specific pattern matched, try to extract just numbers
+        if not params:
+            number_match = re.search(r"(\d+)", voice_lower)
+            if number_match:
+                duration = int(number_match.group(1))
+                # Default to minutes for voice commands
+                params["duration"] = duration
+                params["unit"] = "minute"
+        
+        return params
+    
+    def format_voice_response(self, data: Any, voice_context: VoiceToolContext) -> str:
+        """Format timer result for voice output."""
+        if not data:
+            return "I couldn't set the timer."
+        
+        if "message" in data:
+            return data["message"]
+        
+        duration = data.get("duration", "")
+        unit = data.get("unit", "")
+        
+        if duration and unit:
+            unit_plural = f"{unit}s" if duration > 1 else unit
+            return f"Timer set for {duration} {unit_plural}."
+        
+        return "Timer has been set successfully."

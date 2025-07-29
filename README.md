@@ -4,6 +4,8 @@
 
 It connects language models, speech, and vision into a unified pipeline that enables machines to talk, think, and eventually feel — starting with basic x86 hardware (like Intel NUCs or Mini PCs).
 
+PersonaOS aims to be the foundation for privacy-first, embodied AI that runs locally and autonomously — bridging language, memory, and interaction.
+
 ---
 
 ## 🚀 Quick Start (New Users)
@@ -77,9 +79,11 @@ start_webui.bat  # Windows
 - 🔄 Universal launcher with smart detection
 
 ✅ **AI Integration:**
-- 🧠 Local LLM via [Ollama](https://ollama.com) (CLI or API)
-- 🧠 Memory system for contextual dialogue
+- 🧠 Local LLM via [Ollama](https://ollama.com) (CLI or API) + Direct Model Execution
+- 🧠 Memory system for contextual dialogue with encryption
 - 🎯 Intent processing and safety validation
+- 🤖 **DevAgent**: Autonomous development assistant via natural language
+- 🎤 **Voice Pipeline**: Complete STT → LLM → TTS conversation system
 
 ✅ **User Experience:**
 - 🛠️ Automated installer for all prerequisites
@@ -92,6 +96,9 @@ start_webui.bat  # Windows
 - 🔌 Plugin system for custom tools
 - 📝 Comprehensive documentation
 - 🔍 Debug modes and logging
+- 🛠️ **DevAgent**: AI-powered development automation with `dev:` commands
+- 🔄 **Hot-swappable backends**: Switch between Ollama and local GGUF models
+- 🛡️ **Safe operations**: Automatic backups, rollback, and command validation
 
 ---
 
@@ -126,6 +133,16 @@ python core/main.py                    # Direct CLI access
 python core/main.py --reset-env        # Reconfigure settings
 python start.py --web                  # Force Web UI mode
 python start.py --health               # System diagnostics
+
+# DevAgent Commands (within PersonaOS conversation)
+dev: Add error handling to API endpoints     # Autonomous development task
+dev-status                                   # Show current task status
+dev-history                                  # Show recent development tasks
+dev-system                                   # Show DevAgent system status
+
+# Voice Features (requires microphone/speaker)
+python core/main.py --voice-only             # Voice-only interaction mode
+python core/main.py --voice-status           # Check voice pipeline status
 ```
 
 ### Configuration
@@ -138,6 +155,67 @@ python setup_env.py
 
 # Reset everything
 python core/main.py --reset-env
+
+# Testing Components
+python test_dev_agent_simple.py        # Test DevAgent functionality
+python demo_dev_agent.py              # DevAgent demonstration
+python test_voice_pipeline.py         # Test voice conversation system
+python test_dme.py                     # Test Direct Model Execution
+```
+
+---
+
+## 🤖 DevAgent: AI-Powered Development
+
+PersonaOS includes **DevAgent** - an autonomous development assistant that executes coding tasks through natural language commands:
+
+### Key DevAgent Features
+- **Natural Language Tasks**: `dev: Add error handling to user authentication`
+- **Intelligent Planning**: Uses LLM to break down tasks into implementation steps
+- **Safe Operations**: Automatic backups, rollback capability, command validation
+- **Project Awareness**: Understands codebase structure and dependencies
+- **Iterative Improvement**: Learns from test results and errors
+
+### DevAgent Commands
+```bash
+# Within PersonaOS conversation
+dev: Create a logging utility with different levels    # Execute development task
+dev-status                                            # Show current task progress
+dev-history 10                                        # Show last 10 tasks
+dev-rollback task_12345                              # Undo changes from specific task
+dev-cancel                                           # Cancel running task
+dev-system                                           # Show system status
+```
+
+### Example DevAgent Tasks
+- `dev: Add input validation to the registration form`
+- `dev: Refactor the database connection handling for better error recovery`
+- `dev: Create unit tests for the authentication module`
+- `dev: Optimize the image processing pipeline for memory usage`
+- `dev: Add logging and monitoring to the API endpoints`
+
+---
+
+## 🎤 Voice Interaction
+
+PersonaOS supports natural voice conversations through its integrated voice pipeline:
+
+### Voice Features
+- **Speech-to-Text**: OpenAI Whisper-based transcription
+- **Natural Conversations**: Complete STT → Intent → LLM → TTS workflow
+- **Voice Commands**: All DevAgent commands work via voice
+- **Audio Feedback**: Natural speech synthesis with emotion
+
+### Voice Usage
+```bash
+# Enable voice-only mode
+python core/main.py --voice-only
+
+# Check voice system status
+python core/main.py --voice-status
+
+# Test text-to-speech
+python core/main.py --tts-test "Hello PersonaOS"
 ```
 
 ---
@@ -182,6 +260,30 @@ cd persona_web_ui/frontend
 npm install
 ```
 
+**DevAgent not working**
+```bash
+# Test DevAgent functionality
+python test_dev_agent_simple.py
+
+# Check system status
+dev-system  # (within PersonaOS conversation)
+
+# View recent tasks
+dev-history
+```
+
+**Voice features not working**
+```bash
+# Check voice pipeline status
+python core/main.py --voice-status
+
+# Test voice components
+python test_voice_pipeline.py
+
+# Verify microphone/speaker setup
+python core/main.py --tts-test "Hello world"
+```
+
 ### Getting Help
 - 🆘 System health check: `python start.py --health`
 - 📖 Documentation: See `docs/` folder
@@ -194,6 +296,8 @@ npm install
 **PersonaOS** is built with modularity in mind:
 
 - **Core** (`core/`) - Main application logic, LLM integration, memory
+- **DevAgent** (`core/dev_agent/`) - Autonomous development system with natural language tasks
+- **Voice Pipeline** (`core/voice/`, `core/sst/`, `core/tts/`) - Complete voice conversation system
 - **Web UI** (`persona_web_ui/`) - FastAPI backend + React frontend  
 - **Tools** (`core/tools/`) - Plugin system for extensibility
 - **Configuration** - Environment-based config with encryption support
@@ -218,8 +322,13 @@ See `CONTRIBUTING.md` for details.
 
 ---
 
-This is the early-stage prototype of a system that aims to be:
-- 🤝 Human-centric  
-- ⚙️ Hardware-agnostic  
-- 🧠 Emotion-aware  
-- 🧩 Open and extensible
+**PersonaOS v0.1.0** is an early-stage prototype that demonstrates:
+- 🤝 **Human-centric interaction** through natural language and voice
+- 🤖 **Autonomous development** via DevAgent's AI-powered coding assistance  
+- ⚙️ **Hardware-agnostic deployment** on standard x86 systems
+- 🧠 **Intelligent conversation** with memory and context awareness
+- 🎤 **Multimodal interaction** supporting text, voice, and web interfaces
+- 🛡️ **Safe operation** with automatic backups, rollback, and validation
+- 🧩 **Open and extensible** modular architecture for future capabilities
+
+**Try DevAgent**: Start PersonaOS and type `dev: Create a simple calculator function` to see autonomous development in action!

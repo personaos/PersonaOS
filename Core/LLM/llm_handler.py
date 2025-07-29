@@ -2,11 +2,45 @@ import os
 import subprocess
 import requests
 import json
+import logging
+from .model_config_loader import ModelConfigLoader
+from .base_model_handler import BaseModelHandler
 
-class OllamaHandler:
-    def __init__(self, model="llama2", api_url=None):
-        self.model = model
-        self.api_url = api_url
+class OllamaHandler(BaseModelHandler):
+    """
+    Legacy Ollama handler adapted to use BaseModelHandler interface.
+    """
+    
+    def __init__(self, config):
+        super().__init__(config)
+        self.model = config.get("model", "llama2")
+        self.api_url = config.get("api_url")
+        self._is_loaded = True  # Ollama is always "loaded"
+
+    def load_model(self) -> bool:
+        """Ollama models are loaded on-demand, so this is always successful."""
+        self._is_loaded = True
+        return True
+
+    def generate(self, prompt: str, stream: bool = False):
+        """Generate response using Ollama."""
+        if stream:
+            return self.generate_streaming(prompt)
+        else:
+            return self.query(prompt)
+
+    def generate_streaming(self, prompt: str):
+        """Ollama doesn't support streaming in this implementation."""
+        response = self.query(prompt)
+        yield response
+
+    def stop(self) -> bool:
+        """Stop is not applicable for Ollama."""
+        return True
+
+    def unload_model(self) -> bool:
+        """Unload is not applicable for Ollama."""
+        return True
 
     def query_cli(self, prompt):
         try:
@@ -46,24 +80,156 @@ class OllamaHandler:
 
 
 class LLMManager:
+    """
+    Enhanced LLM Manager with DME support.
+    
+    Manages different model backends including Ollama and llama-cpp-python.
+    """
+    
     def __init__(self, config):
         self.config = config
-        self.llm_name = config.get("llm_model", "ollama")
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.model_config_loader = ModelConfigLoader()
         self.llm = None
+        self.current_backend = None
         self._init_llm()
 
     def _init_llm(self):
-        if self.llm_name == "ollama":
-            model = self.config.get("ollama_model", "llama2")
-            api_url = self.config.get("ollama_api_url", None)
-            self.llm = OllamaHandler(model=model, api_url=api_url)
-        else:
-            raise NotImplementedError(f"LLM '{self.llm_name}' not supported yet")
+        """Initialize the LLM based on configuration."""
+        # Check for DME model backend setting
+        backend_name = self.config.get("model_backend") or self.config.get("llm_model", "ollama")
+        
+        try:
+            backend_config = self.model_config_loader.get_backend_config(backend_name)
+            if not backend_config:
+                self.logger.warning(f"Backend '{backend_name}' not found, falling back to ollama")
+                backend_config = self.model_config_loader.get_backend_config("ollama")
+                backend_name = "ollama"
+            
+            backend_type = backend_config.get("type", backend_name)
+            self.current_backend = backend_name
+            
+            if backend_type == "ollama":
+                # Legacy compatibility - merge old config format
+                legacy_config = {
+                    "model": self.config.get("ollama_model", backend_config.get("model", "llama2")),
+                    "api_url": self.config.get("ollama_api_url", backend_config.get("api_url"))
+                }
+                backend_config.update(legacy_config)
+                self.llm = OllamaHandler(backend_config)
+                
+            elif backend_type == "llama_cpp":
+                from .llama_cpp_handler import LlamaCppHandler
+                self.llm = LlamaCppHandler(backend_config)
+                
+                # Load model automatically for DME backends
+                if not self.llm.load_model():
+                    self.logger.error("Failed to load llama-cpp model")
+                    self.llm = None
+                    
+            else:
+                raise NotImplementedError(f"Backend type '{backend_type}' not supported")
+                
+            self.logger.info(f"Initialized LLM backend: {backend_name} (type: {backend_type})")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to initialize LLM backend '{backend_name}': {e}")
+            # Fallback to basic Ollama configuration
+            self._init_fallback_ollama()
 
-    def query(self, prompt):
+    def _init_fallback_ollama(self):
+        """Initialize fallback Ollama handler when other backends fail."""
+        self.logger.info("Falling back to basic Ollama configuration")
+        fallback_config = {
+            "model": self.config.get("ollama_model", "llama2"),
+            "api_url": self.config.get("ollama_api_url")
+        }
+        self.llm = OllamaHandler(fallback_config)
+        self.current_backend = "ollama"
+
+    def query(self, prompt, stream=False):
+        """
+        Query the LLM with enhanced DME support.
+        
+        Args:
+            prompt: Input prompt
+            stream: Whether to use streaming (if supported)
+            
+        Returns:
+            Response string or iterator for streaming
+        """
         if not self.llm:
             return "No LLM initialized."
-        return self.llm.query(prompt)
+        
+        try:
+            # Use new interface if available
+            if hasattr(self.llm, 'generate'):
+                return self.llm.generate(prompt, stream=stream)
+            # Fallback to legacy interface
+            else:
+                return self.llm.query(prompt)
+                
+        except Exception as e:
+            self.logger.error(f"Query failed: {e}")
+            return f"Error during LLM query: {str(e)}"
+
+    def switch_backend(self, backend_name: str) -> bool:
+        """
+        Switch to a different model backend.
+        
+        Args:
+            backend_name: Name of backend to switch to
+            
+        Returns:
+            True if switch was successful
+        """
+        if backend_name == self.current_backend:
+            return True
+        
+        try:
+            # Unload current model if it's a DME backend
+            if self.llm and hasattr(self.llm, 'unload_model'):
+                self.llm.unload_model()
+            
+            # Save current backend for rollback
+            old_backend = self.current_backend
+            old_llm = self.llm
+            
+            # Update config and reinitialize
+            self.config["model_backend"] = backend_name
+            self._init_llm()
+            
+            if self.llm is None:
+                # Rollback on failure
+                self.current_backend = old_backend
+                self.llm = old_llm
+                return False
+            
+            self.logger.info(f"Switched to backend: {backend_name}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to switch backend to '{backend_name}': {e}")
+            return False
+
+    def list_available_backends(self) -> list[str]:
+        """Get list of available backends."""
+        return self.model_config_loader.list_available_backends()
+
+    def get_current_backend_info(self) -> dict:
+        """Get information about current backend."""
+        if not self.llm:
+            return {"backend": None, "status": "not_initialized"}
+        
+        info = {
+            "backend": self.current_backend,
+            "status": "loaded" if self.llm.is_loaded() else "unloaded"
+        }
+        
+        if hasattr(self.llm, 'get_model_info'):
+            info.update(self.llm.get_model_info())
+        
+        return info
 
 
 def init_llm_manager(config):

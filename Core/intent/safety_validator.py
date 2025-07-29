@@ -229,5 +229,13 @@ class SafetyValidator:
     def add_safe_tool(self, tool: str):
         self.safe_tools.add(tool)
     
+    def add_voice_sensitive_command(self, command: str):
+        """Add a command that requires extra caution when executed via voice."""
+        self.voice_sensitive_commands.add(command)
+    
+    def remove_voice_sensitive_command(self, command: str):
+        """Remove a command from voice-sensitive list."""
+        self.voice_sensitive_commands.discard(command)
+    
     def add_restricted_tool(self, tool: str, restriction: str):
         self.restricted_tools[tool] = restriction

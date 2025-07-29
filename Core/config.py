@@ -52,8 +52,34 @@ def load_config():
         "monthly_quota_warning": os.getenv("MONTHLY_QUOTA_WARNING", "true").lower() == "true",
 
         # ==============================================
-        # AUDIO & HARDWARE
+        # AUDIO & VOICE SETTINGS
         # ==============================================
+        
+        # Speech-to-Text (STT) Configuration
+        "stt_enabled": os.getenv("STT_ENABLED", "false").lower() == "true",
+        "stt_model": os.getenv("STT_MODEL", "base"),
+        "stt_language": os.getenv("STT_LANGUAGE", "en"),
+        "stt_device_index": _safe_int(os.getenv("STT_DEVICE_INDEX")),
+        
+        # Text-to-Speech (TTS) Configuration
+        "tts_enabled": os.getenv("TTS_ENABLED", "true").lower() == "true",
+        "tts_voice": os.getenv("TTS_VOICE", None),
+        "tts_language": os.getenv("TTS_LANGUAGE", "en"),
+        "tts_rate": int(os.getenv("TTS_RATE", "200")),
+        "tts_volume": float(os.getenv("TTS_VOLUME", "0.9")),
+        "tts_streaming_enabled": os.getenv("TTS_STREAMING_ENABLED", "true").lower() == "true",
+        
+        # Voice Pipeline Controller Settings
+        "voice_pipeline_enabled": os.getenv("VOICE_PIPELINE_ENABLED", "true").lower() == "true",
+        "voice_auto_start": os.getenv("VOICE_AUTO_START", "false").lower() == "true",
+        "voice_response_timeout": int(os.getenv("VOICE_RESPONSE_TIMEOUT", "30")),
+        "voice_state_callbacks": os.getenv("VOICE_STATE_CALLBACKS", "true").lower() == "true",
+        "voice_metrics_enabled": os.getenv("VOICE_METRICS_ENABLED", "true").lower() == "true",
+        
+        # Voice Error Handling & Fallback Settings
+        "voice_fallback_enabled": os.getenv("VOICE_FALLBACK_ENABLED", "true").lower() == "true",
+        "voice_max_retries": int(os.getenv("VOICE_MAX_RETRIES", "3")),
+        "tts_fallback_enabled": os.getenv("TTS_FALLBACK_ENABLED", "true").lower() == "true",
         
         # Wakeword detection
         "wakeword_engine": os.getenv("WAKEWORD_ENGINE", "porcupine"),
@@ -239,5 +265,39 @@ def validate_config(config: Dict) -> Dict[str, str]:
     
     if config['memory_retention_days'] < 1:
         issues['memory_retention_days'] = "Must be at least 1 day"
+    
+    # Check STT settings
+    valid_stt_models = ['tiny', 'base', 'small', 'medium', 'large']
+    if config['stt_model'] not in valid_stt_models:
+        issues['stt_model'] = f"Must be one of: {', '.join(valid_stt_models)}"
+    
+    # Check STT language (basic validation)
+    if config['stt_language'] and len(config['stt_language']) not in [2, 5]:  # 'en' or 'en-US'
+        issues['stt_language'] = "Must be a valid language code (e.g., 'en', 'en-US', or 'auto')"
+    
+    # Check voice pipeline settings
+    if config['voice_response_timeout'] < 5:
+        issues['voice_response_timeout'] = "Must be at least 5 seconds"
+    elif config['voice_response_timeout'] > 300:
+        issues['voice_response_timeout'] = "Must be no more than 300 seconds (5 minutes)"
+    
+    # Check voice error handling settings
+    if config['voice_max_retries'] < 1:
+        issues['voice_max_retries'] = "Must be at least 1"
+    elif config['voice_max_retries'] > 10:
+        issues['voice_max_retries'] = "Must be no more than 10"
+    
+    # Check TTS settings
+    if config['tts_rate'] < 50:
+        issues['tts_rate'] = "Must be at least 50 words per minute"
+    elif config['tts_rate'] > 500:
+        issues['tts_rate'] = "Must be no more than 500 words per minute"
+    
+    if not (0.0 <= config['tts_volume'] <= 1.0):
+        issues['tts_volume'] = "Must be between 0.0 and 1.0"
+    
+    # Check TTS language (basic validation)
+    if config['tts_language'] and len(config['tts_language']) not in [2, 5]:  # 'en' or 'en-US'
+        issues['tts_language'] = "Must be a valid language code (e.g., 'en', 'en-US')"
     
     return issues
